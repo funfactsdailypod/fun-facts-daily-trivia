@@ -14,8 +14,8 @@ An interactive solo + multiplayer trivia web app built for listeners of **Fun Fa
   - Topic filter bar (*Give me everything!*, *Animals*, *Foods*, *Art*, *Science*, *Geography*, *History*, *Pop Culture*, *Biographies*) with live unseen counts and a strict non-repeat guarantee per player.
   - Submitting an answer reveals the explanation **and** an embedded episode player cued directly to the `MM:SS` timestamp where the answer is explained.
 - **🏅 Achievement Badge Board & Portable Sync Code:** 12 unlockable badges (streaks, point milestones, category breadth, listening, Apple Podcasts, Group Game) plus a zero-login Backup/Sync Code to move progress across devices.
-- **🎉 Multiplayer Group Game (Kahoot Live Mode + Self-Paced Leaderboard Mode):**
-  - Supports both **Live Kahoot Mode** (host controls shared screen while players tap geometric tiles on phones/tablets) and **Self-Paced Leaderboard Mode** (ideal for 1-day or 1-week classroom/family/social challenges).
+- **🎉 Multiplayer Group Game (Live Mode + Self-Paced Leaderboard Mode):**
+  - Supports both **Live Mode** (host controls shared screen while players tap geometric tiles on phones/tablets) and **Self-Paced Leaderboard Mode** (ideal for 1-day or 1-week classroom/family/social challenges).
   - Unique active game codes (custom or random unambiguous 6-character code), scannable offline SVG **QR Code**, player nicknames + 12 Memphis avatars, and **1 Hour / 1 Day / 1 Week** automatic code expiration & reuse.
 - **🤖 Automated Weekday Feed Agent:** GitHub Actions workflow + Gemini 2.5 Flash script monitors your Megaphone RSS feed every weekday (Mon–Fri), listens to new episodes, extracts a verified trivia question + exact `MM:SS` audio timestamp, and updates the live app automatically.
 
