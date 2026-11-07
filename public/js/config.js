@@ -22,8 +22,8 @@ export const SHOW_CONFIG = {
  * plus BroadcastChannel/localStorage sync across browser tabs!
  */
 export const CLOUD_CONFIG = {
-  supabaseUrl: '',
-  supabaseAnonKey: ''
+  supabaseUrl: 'https://bvxpgmhceljtoqppjhvy.supabase.co/rest/v1/',
+  supabaseAnonKey: 'sb_publishable_CWY2ttT3PjNq3ilsX297CA_5M49dfiC'
 };
 
 export const CATEGORIES = [
