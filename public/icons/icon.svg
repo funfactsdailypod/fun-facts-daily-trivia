@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFE169"/>
+      <stop offset="55%" stop-color="#FFD23F"/>
+      <stop offset="100%" stop-color="#FF7A00"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bgGrad)" stroke="#181824" stroke-width="24"/>
+  <!-- Memphis geometric accents -->
+  <circle cx="96" cy="102" r="22" fill="#00BFA6" stroke="#181824" stroke-width="10"/>
+  <polygon points="416,74 452,134 380,134" fill="#FF4D6D" stroke="#181824" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M74 410 Q96 382 118 410 T162 410" fill="none" stroke="#181824" stroke-width="12" stroke-linecap="round"/>
+  <!-- Central Lightbulb / Podcast Mic Emblem -->
+  <g transform="translate(256, 246)">
+    <path d="M0,-128 C-68,-128 -116,-78 -116,-14 C-116,32 -86,66 -60,94 L-52,118 L52,118 L60,94 C86,66 116,32 116,-14 C116,-78 68,-128 0,-128 Z"
+          fill="#FFFDF5" stroke="#181824" stroke-width="20" stroke-linejoin="round"/>
+    <!-- Mic grille inside bulb -->
+    <rect x="-32" y="-68" width="64" height="92" rx="32" fill="#FF7A00" stroke="#181824" stroke-width="14"/>
+    <line x1="-22" y1="-36" x2="22" y2="-36" stroke="#181824" stroke-width="10" stroke-linecap="round"/>
+    <line x1="-22" y1="-12" x2="22" y2="-12" stroke="#181824" stroke-width="10" stroke-linecap="round"/>
+    <!-- Bulb base -->
+    <rect x="-46" y="126" width="92" height="24" rx="10" fill="#00BFA6" stroke="#181824" stroke-width="14"/>
+    <rect x="-32" y="156" width="64" height="22" rx="10" fill="#181824"/>
+  </g>
+</svg>

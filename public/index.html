@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fun Facts Daily — Podcast, Playlists &amp; Trivia Game</title>
+  <meta
+    name="description"
+    content="Play the official Fun Facts Daily trivia game, search 400+ episodes, build custom playlists, share visual score cards, or host a live Group Game!"
+  />
+  <meta name="theme-color" content="#FFD23F" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Fun Facts" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+  <link rel="apple-touch-icon" href="./icons/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Mono:wght@700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./css/styles.css" />
+</head>
+<body data-mode="solo">
+  <!-- Optional Pop-Out Helper when embedded inside a Google Sites iframe -->
+  <div class="embed-popout-bar" id="embed-popout-bar" hidden>
+    <span>📱 Playing on iPhone/iPad? Open full-screen so your streaks &amp; playlists stay saved permanently!</span>
+    <a href="./" target="_blank" rel="noopener" class="embed-popout-btn" id="embed-popout-link">
+      ↗ Open Full-Screen App
+    </a>
+  </div>
+
+  <!-- Decorative Memphis Geometric Background Layer -->
+  <div class="memphis-bg" aria-hidden="true">
+    <svg class="m-shape m-shape--squiggle" viewBox="0 0 180 48" fill="none">
+      <path d="M6 34C22 10 38 10 54 34C70 58 86 58 102 34C118 10 134 10 150 34C160 48 168 48 174 34" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+    </svg>
+    <svg class="m-shape m-shape--triangle" viewBox="0 0 90 80" fill="none">
+      <polygon points="45,6 84,74 6,74" fill="currentColor" stroke="#181824" stroke-width="5" stroke-linejoin="round"/>
+    </svg>
+    <svg class="m-shape m-shape--donut" viewBox="0 0 90 90" fill="none">
+      <circle cx="45" cy="45" r="30" stroke="currentColor" stroke-width="14"/>
+      <circle cx="45" cy="45" r="37" stroke="#181824" stroke-width="3.5"/>
+    </svg>
+    <div class="m-shape m-shape--dots"></div>
+  </div>
+
+  <!-- Confetti Canvas & Celebration Toast Stack -->
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+  <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
+
+  <!-- Top Navigation & Persistent Stats Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="#top" class="brand-logo" id="brand-home-link">
+        <div class="brand-badge" aria-hidden="true">💡</div>
+        <div class="brand-copy">
+          <span class="brand-eyebrow">OFFICIAL PODCAST APP</span>
+          <span class="brand-title">Fun Facts <span class="brand-highlight">Daily</span></span>
+        </div>
+      </a>
+
+      <nav class="mode-switcher" aria-label="App Sections">
+        <button type="button" class="mode-btn is-active" id="btn-mode-solo" data-switch-mode="solo">
+          ☀️ Trivia
+        </button>
+        <button type="button" class="mode-btn" id="btn-mode-episodes" data-switch-mode="episodes">
+          🔎 Episodes
+        </button>
+        <button type="button" class="mode-btn" id="btn-mode-playlists" data-switch-mode="playlists">
+          🎧 Playlists <span class="nav-mini-count" id="nav-playlist-count" hidden>0</span>
+        </button>
+        <button type="button" class="mode-btn" id="btn-mode-group" data-switch-mode="group">
+          🎉 Group Game
+        </button>
+      </nav>
+
+      <div class="stats-toolbar">
+        <div class="stat-pill stat-pill--streak" id="streak-pill" title="Weekday-safe Daily Double streak (Fri → Mon keeps your streak alive!)">
+          <span class="stat-icon" aria-hidden="true">🔥</span>
+          <div class="stat-text">
+            <span class="stat-val" id="header-streak-val">0</span>
+            <span class="stat-lbl hide-sm">Streak</span>
+          </div>
+        </div>
+
+        <div class="stat-pill stat-pill--score" id="score-pill" title="Cumulative score across all days">
+          <span class="stat-icon" aria-hidden="true">⭐</span>
+          <div class="stat-text">
+            <span class="stat-val" id="header-score-val">0</span>
+            <span class="stat-lbl hide-sm">Pts</span>
+          </div>
+        </div>
+
+        <button type="button" class="stat-pill stat-pill--badges" id="badges-pill" title="View Achievement Badge Board">
+          <span class="stat-icon" aria-hidden="true">🏅</span>
+          <div class="stat-text">
+            <span class="stat-val" id="header-badges-val">0/12</span>
+          </div>
+        </button>
+
+        <button type="button" class="icon-action-btn icon-action-btn--install" id="btn-install-app" title="Install Fun Facts Daily on your phone or computer">
+          📲 <span class="hide-sm">Get App</span>
+        </button>
+
+        <button type="button" class="icon-action-btn" id="btn-open-sync" title="Save or transfer your streak, playlists &amp; points across devices">
+          🔄
+        </button>
+
+        <button type="button" class="icon-action-btn" id="btn-open-studio" title="Host Studio: Inspect &amp; edit episode questions">
+          🎙️
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="page-container">
+    <!-- ==========================================
+         TAB 1: SOLO TRIVIA MODE
+         ========================================== -->
+    <div id="solo-view" class="view-section">
+      <!-- Top Hero Split: Daily Double (Left) + Latest Episode Player (Right) -->
+      <section class="hero-grid" aria-label="Daily Double and Latest Episode">
+        <!-- LEFT PANE: DAILY DOUBLE -->
+        <article class="memphis-card hero-daily-card" id="daily-double-card">
+          <div class="card-top-bar">
+            <div class="daily-tabs" id="daily-mode-tabs">
+              <button type="button" class="daily-tab is-active" id="tab-daily-main">
+                ⚡ Daily Double <span class="pts-pill">+20 PTS</span>
+              </button>
+              <button type="button" class="daily-tab" id="tab-weekend-vault" hidden>
+                🎁 Weekend Bonus <span class="pts-pill">+15 PTS</span>
+              </button>
+            </div>
+            <span class="category-tag" id="daily-category-tag">Loading…</span>
+          </div>
+
+          <div class="streak-banner" id="daily-streak-banner">
+            <span id="daily-streak-msg">New episodes Mon–Fri! Answer correctly to build your streak.</span>
+          </div>
+
+          <div class="ep-source-line">
+            <span>From latest episode:</span>
+            <strong id="daily-ep-title">Loading latest episode…</strong>
+            <span class="ep-date-dot" id="daily-ep-date"></span>
+          </div>
+
+          <h1 class="trivia-question" id="daily-question-text">
+            Loading today’s Daily Double question…
+          </h1>
+
+          <div class="hint-row" id="daily-hint-row">
+            <button type="button" class="chip-link-btn" id="btn-daily-cue-hint">
+              🎧 Cue Episode Audio for a Hint
+            </button>
+          </div>
+
+          <form id="daily-form" class="options-form">
+            <div class="options-list" id="daily-options-list" role="radiogroup" aria-labelledby="daily-question-text"></div>
+            <div class="submit-row" id="daily-submit-row">
+              <button type="submit" class="primary-cta-btn" id="btn-daily-submit" disabled>
+                Lock In Answer
+              </button>
+            </div>
+          </form>
+
+          <!-- Post-Answer Explanation Box -->
+          <div class="answer-reveal-box" id="daily-reveal-box" hidden>
+            <div class="reveal-banner" id="daily-reveal-banner"></div>
+            <p class="reveal-correct-line" id="daily-correct-line"></p>
+            <p class="reveal-explanation" id="daily-explanation-text"></p>
+            <div class="reveal-actions">
+              <button type="button" class="secondary-cta-btn" id="btn-share-daily">
+                📸 Share Score Card
+              </button>
+              <button type="button" class="chip-link-btn" id="btn-play-daily-answer">
+                ▶ Hear This Part in the Episode
+              </button>
+              <button type="button" class="chip-link-btn" id="btn-add-daily-playlist">
+                ➕ Save Episode to Playlist
+              </button>
+              <button type="button" class="secondary-cta-btn" id="btn-try-weekend-bonus" hidden>
+                🎁 Play Weekend Bonus (+15 PTS) →
+              </button>
+            </div>
+          </div>
+        </article>
+
+        <!-- RIGHT PANE: LATEST EPISODE & CUSTOM AUDIO PLAYER -->
+        <aside class="memphis-card hero-player-card" aria-label="Latest Podcast Episode Player">
+          <div class="player-pane-header">
+            <span class="pane-kicker">🎧 LATEST EPISODE</span>
+            <a
+              href="https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="apple-mini-badge"
+              id="top-follow-apple-link"
+            >
+              + Follow Show
+            </a>
+          </div>
+          <div id="hero-player-mount"></div>
+        </aside>
+      </section>
+
+      <!-- MIDDLE SECTION: MORE TO EXPLORE (RANDOMIZED ARCHIVES) -->
+      <section class="explore-section memphis-card" id="explore-section" aria-labelledby="explore-heading">
+        <div class="section-header-row">
+          <div>
+            <div class="section-eyebrow">📚 ARCHIVE CHALLENGE • +10 PTS EACH</div>
+            <h2 class="section-title" id="explore-heading">More to Explore</h2>
+            <p class="section-subtitle">
+              Challenge yourself with random trivia questions pulled from across the entire
+              <strong>Fun Facts Daily</strong> episode archive! Every correct answer earns
+              <strong>10 points</strong>, and you’ll never be shown the same archive question twice.
+            </p>
+          </div>
+          <div class="explore-progress-box">
+            <span class="explore-count-big" id="explore-progress-count">0 / 0</span>
+            <span class="explore-count-lbl">Episodes Explored</span>
+          </div>
+        </div>
+
+        <!-- Category Filter Bar (Defaults to "Give me everything!") -->
+        <div class="category-filter-bar" id="archive-category-bar" role="toolbar" aria-label="Filter archive questions by topic"></div>
+
+        <!-- Archive Question Play Area -->
+        <div class="archive-stage" id="archive-stage">
+          <div class="archive-card-meta">
+            <span class="category-tag" id="archive-category-tag">Topic</span>
+            <span class="archive-ep-origin" id="archive-ep-origin">Episode Archive</span>
+            <button type="button" class="text-shuffle-btn" id="btn-archive-shuffle" title="Draw a different unseen question">
+              🎲 Draw Another
+            </button>
+          </div>
+
+          <h3 class="trivia-question trivia-question--archive" id="archive-question-text">
+            Loading archive trivia…
+          </h3>
+
+          <form id="archive-form" class="options-form">
+            <div class="options-list" id="archive-options-list" role="radiogroup" aria-labelledby="archive-question-text"></div>
+            <div class="submit-row" id="archive-submit-row">
+              <button type="submit" class="primary-cta-btn" id="btn-archive-submit" disabled>
+                Submit Answer (+10 PTS)
+              </button>
+            </div>
+          </form>
+
+          <!-- Post-Answer Explanation + Cued Episode Player -->
+          <div class="answer-reveal-box" id="archive-reveal-box" hidden>
+            <div class="reveal-banner" id="archive-reveal-banner"></div>
+            <p class="reveal-correct-line" id="archive-correct-line"></p>
+            <p class="reveal-explanation" id="archive-explanation-text"></p>
+
+            <div class="archive-listen-callout">
+              <div class="listen-callout-header">
+                <span class="listen-spark">🎧</span>
+                <div>
+                  <strong>Want to learn even more? Listen to the episode!</strong>
+                  <p id="archive-cue-note">
+                    We’ve cued the player right to the section where this trivia answer is explained.
+                  </p>
+                </div>
+              </div>
+              <div id="archive-player-mount"></div>
+            </div>
+
+            <div class="reveal-actions reveal-actions--next">
+              <button type="button" class="chip-link-btn" id="btn-add-archive-playlist">
+                ➕ Save Episode to Playlist
+              </button>
+              <button type="button" class="primary-cta-btn" id="btn-next-archive">
+                Next Random Question →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Completed State -->
+        <div class="archive-complete-box" id="archive-complete-box" hidden>
+          <div class="complete-emoji">🎉</div>
+          <h3 id="archive-complete-title">You explored every question in this topic!</h3>
+          <p id="archive-complete-desc">Switch back to "Give me everything!" or pick another category to keep racking up points.</p>
+          <div class="reveal-actions" style="justify-content:center">
+            <button type="button" class="primary-cta-btn" id="btn-reset-filter-all">
+              ✨ Give Me Everything!
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTTOM SECTION: ACHIEVEMENT BADGE BOARD -->
+      <section class="badges-section memphis-card" id="badges-section" aria-labelledby="badges-heading">
+        <div class="section-header-row">
+          <div>
+            <div class="section-eyebrow">🏆 TROPHY CABINET</div>
+            <h2 class="section-title" id="badges-heading">Achievement Badge Board</h2>
+            <p class="section-subtitle">
+              Keep your weekday streak rolling, explore new categories, and climb point milestones to unlock all 12 badges!
+            </p>
+          </div>
+          <div class="badge-header-actions">
+            <button type="button" class="secondary-cta-btn" id="btn-share-overall-card">
+              📸 Share My Score Card
+            </button>
+            <div class="explore-progress-box">
+              <span class="explore-count-big" id="badges-unlocked-summary">0 / 12</span>
+              <span class="explore-count-lbl">Badges Earned</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="badges-grid" id="badges-grid"></div>
+      </section>
+    </div>
+
+    <!-- ==========================================
+         TAB 2: EPISODE SEARCH & DISCOVERY HUB
+         ========================================== -->
+    <div id="episodes-view" class="view-section" hidden>
+      <!-- Active Library Audio Player -->
+      <section class="memphis-card library-player-banner">
+        <div class="player-pane-header">
+          <span class="pane-kicker">📻 EPISODE PLAYER</span>
+          <button type="button" class="chip-link-btn" id="btn-surprise-episode">
+            🎲 Play a Surprise Episode!
+          </button>
+        </div>
+        <div id="library-player-mount"></div>
+      </section>
+
+      <!-- Search & Filter Controls -->
+      <section class="memphis-card" aria-labelledby="episodes-hub-heading">
+        <div class="section-header-row">
+          <div>
+            <div class="section-eyebrow">🔎 FULL PODCAST CATALOG</div>
+            <h2 class="section-title" id="episodes-hub-heading">Find &amp; Listen to Episodes</h2>
+            <p class="section-subtitle">
+              Search over 400 episodes by keyword, filter by favorite topics, heart episodes you love, build playlists, or jump straight to an episode’s trivia challenge!
+            </p>
+          </div>
+          <div class="explore-progress-box">
+            <span class="explore-count-big" id="episodes-match-count">404</span>
+            <span class="explore-count-lbl">Matching Episodes</span>
+          </div>
+        </div>
+
+        <div class="episodes-search-controls">
+          <input
+            type="search"
+            id="episodes-search-input"
+            class="memphis-input"
+            placeholder="Search episodes (e.g. Sharks, Pizza, Space, Da Vinci, Bears, Inventors)…"
+            aria-label="Search episodes"
+          />
+          <select id="episodes-sort-select" class="memphis-input episodes-sort-select" aria-label="Sort episodes">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="shortest">Shortest First</option>
+          </select>
+        </div>
+
+        <div class="episodes-status-bar" id="episodes-status-bar">
+          <button type="button" class="seg-pill is-active" data-ep-status="all">📚 All Episodes</button>
+          <button type="button" class="seg-pill" data-ep-status="favorites">❤️ Favorites</button>
+          <button type="button" class="seg-pill" data-ep-status="unheard">✨ Unheard</button>
+          <button type="button" class="seg-pill" data-ep-status="listened">✓ Listened</button>
+        </div>
+
+        <div class="category-filter-bar" id="episodes-category-bar" role="toolbar" aria-label="Filter episodes by topic"></div>
+
+        <div class="episodes-catalog-grid" id="episodes-catalog-grid"></div>
+
+        <div class="reveal-actions" style="justify-content:center;margin-top:22px" id="episodes-load-more-wrap">
+          <button type="button" class="secondary-cta-btn" id="btn-episodes-load-more">
+            Load More Episodes ↓
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ==========================================
+         TAB 3: FAVORITES & CUSTOM PLAYLISTS
+         ========================================== -->
+    <div id="playlists-view" class="view-section" hidden>
+      <div class="playlists-layout">
+        <!-- Left Sidebar: My Collections + Create Playlist -->
+        <aside class="memphis-card playlists-sidebar">
+          <div class="section-eyebrow">🎧 YOUR COLLECTIONS</div>
+          <h2 class="section-title" style="font-size:1.55rem">My Playlists</h2>
+          <p class="section-subtitle" style="margin-bottom:16px">
+            Build road-trip mixes, classroom packs, or bedtime queues—and play them back-to-back automatically!
+          </p>
+
+          <div class="playlist-selector-list" id="playlist-selector-list"></div>
+
+          <hr class="memphis-divider" />
+
+          <form id="create-playlist-form" class="group-form" style="margin-top:0">
+            <label class="field-label" for="new-playlist-name">Create a New Playlist</label>
+            <input
+              type="text"
+              id="new-playlist-name"
+              class="memphis-input"
+              placeholder="e.g. Family Road Trip, Kids Science…"
+              maxlength="38"
+              required
+            />
+            <div class="playlist-icon-row" id="new-playlist-icons"></div>
+            <button type="submit" class="primary-cta-btn primary-cta-btn--full">
+              ➕ Create Playlist
+            </button>
+          </form>
+
+          <hr class="memphis-divider" />
+
+          <span class="field-label" style="margin-bottom:8px">⚡ 1-Click Starter Packs</span>
+          <div class="starter-packs-col">
+            <button type="button" class="chip-link-btn" data-starter-pack="Animals">🐾 5 Animal Favorites</button>
+            <button type="button" class="chip-link-btn" data-starter-pack="Science">🔬 5 Science Wonders</button>
+            <button type="button" class="chip-link-btn" data-starter-pack="History">🏛️ 5 History Gems</button>
+          </div>
+        </aside>
+
+        <!-- Right Stage: Active Playlist Queue & Continuous Player -->
+        <section class="memphis-card playlists-main-stage">
+          <div class="playlist-stage-header" id="playlist-stage-header"></div>
+
+          <div class="playlist-player-box" id="playlist-player-box">
+            <div id="playlist-player-mount"></div>
+          </div>
+
+          <div class="playlist-tracks-list" id="playlist-tracks-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         TAB 4: GROUP GAME MODE (KAHOOT + SELF-PACED)
+         ========================================== -->
+    <div id="group-view" class="view-section" hidden>
+      <!-- 1) GROUP ENTRY HUB -->
+      <section class="group-hub-grid" id="group-screen-entry">
+        <!-- Player Join Card -->
+        <div class="memphis-card group-entry-card">
+          <div class="section-eyebrow">📱 PLAYER CONTROLLER</div>
+          <h2 class="section-title">Join a Group Game</h2>
+          <p class="section-subtitle">
+            Enter your host’s game code, pick a fun avatar, and compete for the top spot on the scoreboard!
+          </p>
+
+          <form id="group-join-form" class="group-form">
+            <label class="field-label" for="join-code-input">Game Code</label>
+            <input
+              type="text"
+              id="join-code-input"
+              class="memphis-input memphis-input--code"
+              placeholder="E.G. K7M4P9"
+              maxlength="10"
+              autocomplete="off"
+              required
+            />
+
+            <label class="field-label" for="join-name-input">Your Display Name</label>
+            <input
+              type="text"
+              id="join-name-input"
+              class="memphis-input"
+              placeholder="Enter your nickname…"
+              maxlength="22"
+              required
+            />
+
+            <span class="field-label">Choose Your Avatar</span>
+            <div class="avatar-picker-grid" id="join-avatar-grid" role="radiogroup" aria-label="Choose an avatar"></div>
+
+            <div class="form-error-msg" id="join-error-msg" hidden></div>
+
+            <button type="submit" class="primary-cta-btn primary-cta-btn--full">
+              🚀 Join Game Room
+            </button>
+          </form>
+        </div>
+
+        <!-- Host Launch Card -->
+        <div class="memphis-card group-entry-card group-entry-card--host">
+          <div class="section-eyebrow">🎙️ GAME HOST</div>
+          <h2 class="section-title">Host a Group Game</h2>
+          <p class="section-subtitle">
+            Run a live Kahoot-style trivia night on a shared screen, or create a 1-day or 1-week challenge code with an instant QR code for classrooms, friends, or family!
+          </p>
+
+          <ul class="host-perks-list">
+            <li>🎯 Choose your favorite topics &amp; number of questions</li>
+            <li>🔑 Pick a custom unique code or generate a 6-digit code</li>
+            <li>📲 Instant scannable QR code for phones &amp; tablets</li>
+            <li>⏱️ Active for 1 Hour, 1 Day, or 1 Week (auto-expires for reuse!)</li>
+          </ul>
+
+          <button type="button" class="primary-cta-btn primary-cta-btn--full" id="btn-go-host-setup">
+            ✨ Set Up a Game as Host →
+          </button>
+        </div>
+      </section>
+
+      <!-- 2) HOST CONFIGURATION SCREEN -->
+      <section class="memphis-card group-setup-card" id="group-screen-host-setup" hidden>
+        <div class="setup-top-row">
+          <div>
+            <div class="section-eyebrow">🎛️ HOST GAME BUILDER</div>
+            <h2 class="section-title">Configure Your Group Game</h2>
+          </div>
+          <button type="button" class="secondary-cta-btn" data-group-back="entry">
+            ← Back
+          </button>
+        </div>
+
+        <form id="host-create-form" class="host-setup-grid">
+          <div class="setup-block">
+            <h3 class="setup-step-title">1. Narrow Question Topics</h3>
+            <p class="setup-step-hint">Leave "All Topics" active or select specific focus areas (<span id="host-pool-count">404</span> matching questions available).</p>
+            <div class="host-topics-grid" id="host-topics-grid"></div>
+
+            <label class="field-label" for="host-qcount-pills" style="margin-top:1rem">Number of Questions</label>
+            <div class="segmented-pills" id="host-qcount-pills">
+              <button type="button" class="seg-pill" data-qcount="5">5 Quick</button>
+              <button type="button" class="seg-pill is-active" data-qcount="10">10 Classic</button>
+              <button type="button" class="seg-pill" data-qcount="15">15 Deep</button>
+              <button type="button" class="seg-pill" data-qcount="20">20 Marathon</button>
+            </div>
+          </div>
+
+          <div class="setup-block">
+            <h3 class="setup-step-title">2. Pacing &amp; Code Expiration</h3>
+
+            <span class="field-label">How will players play?</span>
+            <div class="pacing-cards" id="host-pacing-cards">
+              <button type="button" class="pacing-option is-active" data-pacing="live">
+                <strong>📺 Live Kahoot Style</strong>
+                <span>Host controls each question on a shared screen while players answer on their devices.</span>
+              </button>
+              <button type="button" class="pacing-option" data-pacing="self_paced">
+                <strong>🏁 Self-Paced Leaderboard</strong>
+                <span>Players complete your question set anytime before the code expires—ideal for 1-day or 1-week codes!</span>
+              </button>
+            </div>
+
+            <label class="checkbox-row" id="host-speed-timer-wrap">
+              <input type="checkbox" id="host-speed-timer" checked />
+              <span>Award speed bonus points (up to +50 pts for fast answers in Live Mode)</span>
+            </label>
+
+            <span class="field-label" style="margin-top:1rem">Keep Game Code Active For</span>
+            <div class="segmented-pills" id="host-duration-pills">
+              <button type="button" class="seg-pill is-active" data-duration="1h">1 Hour</button>
+              <button type="button" class="seg-pill" data-duration="1d">1 Day</button>
+              <button type="button" class="seg-pill" data-duration="1w">1 Week</button>
+            </div>
+            <p class="setup-micro-note">
+              Once this time expires, the code automatically deactivates so another host can reuse it on another day.
+            </p>
+
+            <h3 class="setup-step-title" style="margin-top:1.25rem">3. Unique Game Code</h3>
+            <div class="code-builder-row">
+              <input
+                type="text"
+                id="host-code-input"
+                class="memphis-input memphis-input--code"
+                maxlength="8"
+                autocomplete="off"
+                required
+              />
+              <button type="button" class="secondary-cta-btn" id="btn-random-code">
+                🎲 Random 6-Char
+              </button>
+            </div>
+            <div class="code-validation-status" id="host-code-status">Checking code availability…</div>
+
+            <div class="form-error-msg" id="host-create-error" hidden></div>
+
+            <button type="submit" class="primary-cta-btn primary-cta-btn--full" id="btn-launch-room" style="margin-top:1rem">
+              🎉 Launch Game &amp; Generate QR Code
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- 3) HOST LIVE ROOM / LOBBY / KAHOOT SCREEN -->
+      <section class="memphis-card group-room-card" id="group-screen-host-room" hidden>
+        <div class="room-topbar">
+          <div class="room-code-cluster">
+            <span class="room-lbl">GAME CODE:</span>
+            <span class="room-code-badge" id="host-room-code-display">------</span>
+            <span class="room-expiry-pill" id="host-room-expiry">1h left</span>
+          </div>
+          <div class="room-top-actions">
+            <button type="button" class="chip-link-btn" id="btn-copy-join-link">
+              🔗 Copy Join Link
+            </button>
+            <button type="button" class="chip-link-btn" id="btn-open-test-player" title="Open a player view in a new tab to test multiplayer right away">
+              📱 Open Player Window
+            </button>
+            <button type="button" class="chip-link-btn chip-link-btn--danger" id="btn-end-host-room">
+              ✕ End Game
+            </button>
+          </div>
+        </div>
+
+        <div id="host-stage-mount"></div>
+      </section>
+
+      <!-- 4) PLAYER DEVICE CONTROLLER SCREEN -->
+      <section class="memphis-card group-room-card" id="group-screen-player-room" hidden>
+        <div class="room-topbar">
+          <div class="player-identity-pill" id="player-identity-pill"></div>
+          <div class="room-top-actions">
+            <span class="room-code-badge room-code-badge--sm" id="player-room-code-display">------</span>
+            <span class="pts-pill" id="player-score-pill">0 PTS</span>
+            <button type="button" class="chip-link-btn" id="btn-leave-player-room">
+              Leave
+            </button>
+          </div>
+        </div>
+
+        <div id="player-stage-mount"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <p>
+        Built for listeners of <strong>Fun Facts Daily</strong> with Kyle Wood • New episodes every Monday–Friday!
+      </p>
+      <div class="footer-links">
+        <a href="https://www.funfactsdailypod.com" target="_blank" rel="noopener noreferrer">
+          Website ↗
+        </a>
+        <span>•</span>
+        <a href="https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693" target="_blank" rel="noopener noreferrer">
+          Apple Podcasts ↗
+        </a>
+        <span>•</span>
+        <a href="https://feeds.megaphone.fm/ARML3789803370" target="_blank" rel="noopener noreferrer">
+          RSS Feed ↗
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================
+       MODAL 1: VISUAL SOCIAL MEDIA SCORE CARD
+       ========================================== -->
+  <div class="modal-backdrop" id="scorecard-modal" hidden>
+    <div class="memphis-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="scorecard-modal-title">
+      <div class="modal-header">
+        <h2 id="scorecard-modal-title">📸 Share Your Score Card</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="scorecard-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc">
+        Share your spoiler-free score card to Instagram, Messages, Facebook, X, or Threads to challenge friends!
+      </p>
+
+      <div class="scorecard-preview-wrap">
+        <canvas id="scorecard-canvas" width="1080" height="1080"></canvas>
+      </div>
+
+      <div class="reveal-actions" style="justify-content:center;margin-top:16px">
+        <button type="button" class="primary-cta-btn" id="btn-native-share-card">
+          📲 Share Image
+        </button>
+        <button type="button" class="secondary-cta-btn" id="btn-download-card-png">
+          ⬇ Download PNG
+        </button>
+        <button type="button" class="chip-link-btn" id="btn-copy-card-caption">
+          📋 Copy Text
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 2: ADD EPISODE TO PLAYLIST PICKER
+       ========================================== -->
+  <div class="modal-backdrop" id="playlist-picker-modal" hidden>
+    <div class="memphis-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="pl-picker-title">
+      <div class="modal-header">
+        <h2 id="pl-picker-title">➕ Save Episode to Playlist</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="playlist-picker-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc" id="pl-picker-ep-label">Choose a playlist below or create a brand-new one:</p>
+
+      <div class="playlist-picker-list" id="playlist-picker-list"></div>
+
+      <hr class="memphis-divider" />
+
+      <form id="quick-create-playlist-form" class="code-builder-row">
+        <input
+          type="text"
+          id="quick-playlist-name"
+          class="memphis-input"
+          placeholder="New playlist name (e.g. Road Trip)…"
+          maxlength="38"
+          required
+        />
+        <button type="submit" class="primary-cta-btn">Create &amp; Add</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 3: INSTALL MOBILE APP (PWA GUIDE)
+       ========================================== -->
+  <div class="modal-backdrop" id="install-app-modal" hidden>
+    <div class="memphis-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="install-modal-title">
+      <div class="modal-header">
+        <h2 id="install-modal-title">📲 Install the Fun Facts Daily App</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="install-app-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc">
+        Add <strong>Fun Facts Daily</strong> straight to your Home Screen for 1-tap access to daily trivia, lock-screen episode playback, and your saved playlists—100% free, no App Store download required!
+      </p>
+
+      <div id="native-pwa-install-wrap" hidden style="margin-bottom:16px">
+        <button type="button" class="primary-cta-btn primary-cta-btn--full" id="btn-trigger-native-pwa">
+          ✨ Install App Now (1 Click)
+        </button>
+      </div>
+
+      <div class="install-steps-box">
+        <h3>🍏 On iPhone or iPad (Safari):</h3>
+        <ol>
+          <li>Tap the <strong>Share</strong> icon <code>[↑]</code> at the bottom of Safari.</li>
+          <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+          <li>Tap <strong>Add</strong>—the sunny Fun Facts Daily icon appears right alongside your apps!</li>
+        </ol>
+        <h3>🤖 On Android (Chrome):</h3>
+        <ol>
+          <li>Tap the <strong>⋮ Menu</strong> in the top-right corner of Chrome.</li>
+          <li>Tap <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 4: SYNC / TRANSFER STREAK & PLAYLISTS
+       ========================================== -->
+  <div class="modal-backdrop" id="sync-modal" hidden>
+    <div class="memphis-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-modal-title">
+      <div class="modal-header">
+        <h2 id="sync-modal-title">🔄 Save or Transfer Your Progress</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="sync-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc">
+        Your streak, cumulative score, badges, favorites, playlists, and seen archive questions save automatically in this browser.
+        Switching devices? Copy your portable Sync Code below and paste it on your phone or tablet!
+      </p>
+
+      <label class="field-label" for="sync-export-box">Your Current Backup Code</label>
+      <div class="code-builder-row">
+        <input type="text" id="sync-export-box" class="memphis-input" readonly />
+        <button type="button" class="secondary-cta-btn" id="btn-copy-sync-code">Copy Code</button>
+      </div>
+
+      <hr class="memphis-divider" />
+
+      <label class="field-label" for="sync-import-box">Restore From Backup Code</label>
+      <div class="code-builder-row">
+        <input type="text" id="sync-import-box" class="memphis-input" placeholder="Paste FFD1-… backup code here" />
+        <button type="button" class="primary-cta-btn" id="btn-apply-sync-code">Restore</button>
+      </div>
+      <div class="form-error-msg" id="sync-status-msg" hidden></div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       MODAL 5: HOST STUDIO (QUESTION & FEED INSPECTOR)
+       ========================================== -->
+  <div class="modal-backdrop" id="studio-modal" hidden>
+    <div class="memphis-card modal-dialog modal-dialog--wide" role="dialog" aria-modal="true" aria-labelledby="studio-modal-title">
+      <div class="modal-header">
+        <h2 id="studio-modal-title">🎙️ Host Studio &amp; Feed Monitor</h2>
+        <button type="button" class="modal-close-btn" data-close-modal="studio-modal" aria-label="Close">✕</button>
+      </div>
+      <p class="modal-desc">
+        Automated RSS Agent monitors <code>feeds.megaphone.fm/ARML3789803370</code> every weekday (Mon–Fri) to add new episodes automatically.
+        Currently loaded: <strong id="studio-ep-count">0</strong> episodes. Search any episode below to preview or fine-tune its trivia question or audio cue timestamp!
+      </p>
+
+      <div class="code-builder-row">
+        <input type="search" id="studio-search-input" class="memphis-input" placeholder="Search episode title or question (e.g. Horses, Kid Inventors, Bears)…" />
+        <button type="button" class="secondary-cta-btn" id="btn-export-questions-json" title="Download updated questions.json with your edits">
+          ⬇ Export JSON
+        </button>
+      </div>
+
+      <div class="studio-results-list" id="studio-results-list"></div>
+
+      <form id="studio-edit-form" class="studio-edit-pane" hidden>
+        <h3 id="studio-edit-ep-title">Edit Question</h3>
+        <div class="studio-two-col">
+          <div>
+            <label class="field-label" for="studio-q-category">Category</label>
+            <select id="studio-q-category" class="memphis-input"></select>
+          </div>
+          <div>
+            <label class="field-label" for="studio-q-cue">Answer Timestamp Cue (Seconds)</label>
+            <input type="number" id="studio-q-cue" class="memphis-input" min="0" max="3600" />
+          </div>
+        </div>
+
+        <label class="field-label" for="studio-q-text">Question</label>
+        <input type="text" id="studio-q-text" class="memphis-input" required />
+
+        <div class="studio-two-col">
+          <div>
+            <label class="field-label" for="studio-opt-0">Option A</label>
+            <input type="text" id="studio-opt-0" class="memphis-input" required />
+          </div>
+          <div>
+            <label class="field-label" for="studio-opt-1">Option B</label>
+            <input type="text" id="studio-opt-1" class="memphis-input" required />
+          </div>
+          <div>
+            <label class="field-label" for="studio-opt-2">Option C</label>
+            <input type="text" id="studio-opt-2" class="memphis-input" required />
+          </div>
+          <div>
+            <label class="field-label" for="studio-opt-3">Option D</label>
+            <input type="text" id="studio-opt-3" class="memphis-input" required />
+          </div>
+        </div>
+
+        <label class="field-label" for="studio-q-correct">Correct Option</label>
+        <select id="studio-q-correct" class="memphis-input">
+          <option value="0">Option A</option>
+          <option value="1">Option B</option>
+          <option value="2">Option C</option>
+          <option value="3">Option D</option>
+        </select>
+
+        <label class="field-label" for="studio-q-exp">Explanation (2–3 sentences)</label>
+        <textarea id="studio-q-exp" class="memphis-input" rows="3" required></textarea>
+
+        <div class="reveal-actions">
+          <button type="submit" class="primary-cta-btn">💾 Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

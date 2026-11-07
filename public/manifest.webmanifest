@@ -1,0 +1,41 @@
+{
+  "name": "Fun Facts Daily — Podcast & Trivia",
+  "short_name": "Fun Facts",
+  "description": "Play the Daily Double trivia challenge, search 400+ episodes, build favorite playlists, and host multiplayer Group Games!",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#FFF6DC",
+  "theme_color": "#FFD23F",
+  "icons": [
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daily Double Trivia",
+      "short_name": "Trivia",
+      "url": "./?tab=solo"
+    },
+    {
+      "name": "Search Episodes",
+      "short_name": "Episodes",
+      "url": "./?tab=episodes"
+    },
+    {
+      "name": "My Playlists",
+      "short_name": "Playlists",
+      "url": "./?tab=playlists"
+    },
+    {
+      "name": "Group Game",
+      "short_name": "Group Game",
+      "url": "./?tab=group"
+    }
+  ]
+}
