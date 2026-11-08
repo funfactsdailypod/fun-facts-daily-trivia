@@ -25,7 +25,7 @@ export const SHOW_CONFIG = {
  * plus BroadcastChannel/localStorage sync across browser tabs!
  */
 export const CLOUD_CONFIG = {
-  supabaseUrl: 'https://bvxpgmhceljtoqppjhvy.supabase.co/rest/v1/',
+  supabaseUrl: 'https://bvxpgmhceljtoqppjhvy.supabase.co',
   supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2eHBnbWhjZWxqdG9xcHBqaHZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQwNzMyMDIsImV4cCI6MjEwOTY0OTIwMn0.CnB5eFwkDJRPBBOLp9vS0x2tuXjP8PYZsHIh7JbSQJA'
 };
 

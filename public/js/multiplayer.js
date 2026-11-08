@@ -37,6 +37,14 @@ export function generateRandomCode(existingCodesSet = new Set()) {
   return `FFD${Math.floor(100 + Math.random() * 899)}`;
 }
 
+export function getCleanSupabaseEndpoint(rawUrl) {
+  let url = String(rawUrl || '').trim();
+  if (!url) return '';
+  url = url.replace(/\/+$/, '');
+  url = url.replace(/\/rest\/v1\/?$/, '');
+  return `${url}/rest/v1`;
+}
+
 export function isRoomActive(room, nowMs = Date.now()) {
   if (!room) return false;
   return Number(room.expiresAt) > nowMs && !room.terminated;
@@ -230,6 +238,9 @@ export class GroupGameService {
   }
 
   async supabaseRequest(path, options = {}) {
+    const endpoint = getCleanSupabaseEndpoint(CLOUD_CONFIG.supabaseUrl);
+    if (!endpoint) throw new Error('Supabase URL is not configured');
+    const cleanPath = String(path || '').replace(/^\/+/, '');
     const headers = {
       apikey: CLOUD_CONFIG.supabaseAnonKey,
       Authorization: `Bearer ${CLOUD_CONFIG.supabaseAnonKey}`,
@@ -237,7 +248,7 @@ export class GroupGameService {
       Prefer: 'return=representation',
       ...(options.headers || {})
     };
-    const res = await fetch(`${CLOUD_CONFIG.supabaseUrl}/rest/v1/${path}`, {
+    const res = await fetch(`${endpoint}/${cleanPath}`, {
       ...options,
       headers
     });
