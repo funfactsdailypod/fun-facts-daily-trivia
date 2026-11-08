@@ -3,6 +3,30 @@ import { BADGES, SHOW_CONFIG } from './config.js';
 const STORAGE_KEY = 'ffd_trivia_player_v1';
 const OVERRIDES_KEY = 'ffd_trivia_host_overrides_v1';
 
+let activeCatalogGuids = [];
+
+export function setCatalogGuids(guids) {
+  activeCatalogGuids = Array.from(guids || []);
+}
+
+export function getAnsweredGuidsSet(state) {
+  const set = new Set(state.seenArchiveGuids || []);
+  for (const guid of Object.keys(state.dailyAttempts || {})) {
+    set.add(guid);
+  }
+  return set;
+}
+
+export function getBadgeMeta(state) {
+  const answeredSet = getAnsweredGuidsSet(state);
+  const totalAvailable = activeCatalogGuids.length;
+  const answeredCount =
+    totalAvailable > 0
+      ? activeCatalogGuids.reduce((acc, guid) => acc + (answeredSet.has(guid) ? 1 : 0), 0)
+      : answeredSet.size;
+  return { totalAvailable, answeredCount };
+}
+
 function toDateKey(d) {
   const yr = d.getFullYear();
   const mo = String(d.getMonth() + 1).padStart(2, '0');
@@ -110,8 +134,9 @@ export function refreshStreakExpiration(state, now = new Date()) {
 export function evaluateNewBadges(state) {
   const newlyUnlocked = [];
   const nowIso = new Date().toISOString();
+  const meta = getBadgeMeta(state);
   for (const badge of BADGES) {
-    if (!state.unlockedBadges[badge.id] && badge.check(state)) {
+    if (!state.unlockedBadges[badge.id] && badge.check(state, meta)) {
       state.unlockedBadges[badge.id] = nowIso;
       newlyUnlocked.push(badge);
     }
@@ -252,6 +277,15 @@ export function toggleFavoriteEpisode(state, guid) {
   return added;
 }
 
+export function moveFavoriteEpisode(state, fromIdx, toIdx) {
+  const list = state.favoriteGuids;
+  if (!Array.isArray(list)) return;
+  if (fromIdx < 0 || fromIdx >= list.length || toIdx < 0 || toIdx >= list.length || fromIdx === toIdx) return;
+  const [moved] = list.splice(fromIdx, 1);
+  list.splice(toIdx, 0, moved);
+  savePlayerState(state);
+}
+
 export function createPlaylist(state, { name, icon = '🎧', color = '#FFD23F', initialGuids = [] }) {
   const cleanName = String(name || '').trim().slice(0, 40) || 'My Fun Facts Mix';
   const playlist = {
@@ -291,7 +325,7 @@ export function removeEpisodeFromPlaylist(state, playlistId, guid) {
 export function moveEpisodeInPlaylist(state, playlistId, fromIdx, toIdx) {
   const pl = state.playlists.find((p) => p.id === playlistId);
   if (!pl) return;
-  if (fromIdx < 0 || fromIdx >= pl.guids.length || toIdx < 0 || toIdx >= pl.guids.length) return;
+  if (fromIdx < 0 || fromIdx >= pl.guids.length || toIdx < 0 || toIdx >= pl.guids.length || fromIdx === toIdx) return;
   const [moved] = pl.guids.splice(fromIdx, 1);
   pl.guids.splice(toIdx, 0, moved);
   savePlayerState(state);

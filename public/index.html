@@ -6,15 +6,15 @@
   <title>Fun Facts Daily — Podcast, Playlists &amp; Trivia Game</title>
   <meta
     name="description"
-    content="Play the official Fun Facts Daily trivia game, search 400+ episodes, build custom playlists, share visual score cards, or host a live Group Game!"
+    content="Play the official Fun Facts Daily trivia game, search 400+ episodes, build custom playlists, share visual score cards, or play custom quizzes with friends!"
   />
   <meta name="theme-color" content="#FFD23F" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Fun Facts" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
-  <link rel="apple-touch-icon" href="./icons/icon.svg" />
+  <link rel="icon" type="image/png" sizes="64x64" href="./icons/favicon-64.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -51,67 +51,177 @@
   <canvas id="confetti-canvas" aria-hidden="true"></canvas>
   <div id="toast-stack" class="toast-stack" aria-live="polite"></div>
 
-  <!-- Top Navigation & Persistent Stats Header -->
-  <header class="site-header">
-    <div class="header-inner">
-      <a href="#top" class="brand-logo" id="brand-home-link">
-        <div class="brand-badge" aria-hidden="true">💡</div>
-        <div class="brand-copy">
-          <span class="brand-eyebrow">OFFICIAL PODCAST APP</span>
-          <span class="brand-title">Fun Facts <span class="brand-highlight">Daily</span></span>
-        </div>
-      </a>
+  <!-- Compact Floating Mini Menu Bar (Appears Automatically When User Scrolls Down) -->
+  <div class="floating-mini-wrap" id="floating-mini-wrap" aria-hidden="true">
+    <div class="floating-mini-bar">
+      <button type="button" class="floating-logo-btn" id="floating-logo-btn" title="Back to top">
+        <img src="./icons/logo-192.png" alt="Fun Facts Daily" class="floating-logo-img" width="36" height="36" />
+      </button>
 
-      <nav class="mode-switcher" aria-label="App Sections">
-        <button type="button" class="mode-btn is-active" id="btn-mode-solo" data-switch-mode="solo">
+      <div class="floating-score-pill" id="floating-score-pill" title="Your cumulative trivia score">
+        <span aria-hidden="true">⭐</span>
+        <span id="floating-score-val">0</span>
+        <span class="floating-score-lbl">Pts</span>
+      </div>
+
+      <button
+        type="button"
+        class="floating-hamburger-btn"
+        id="btn-floating-menu-toggle"
+        aria-label="Toggle full navigation menu"
+        aria-expanded="false"
+        aria-controls="floating-menu-drawer"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true">
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="4" y1="12" x2="20" y2="12" />
+          <line x1="4" y1="18" x2="20" y2="18" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Expandable Full Menu Drawer Attached to Floating Bar -->
+    <div class="floating-menu-drawer memphis-card" id="floating-menu-drawer" hidden>
+      <div class="drawer-nav-grid">
+        <button type="button" class="mode-btn is-active" id="drawer-mode-solo" data-switch-mode="solo">
           ☀️ Trivia
         </button>
-        <button type="button" class="mode-btn" id="btn-mode-episodes" data-switch-mode="episodes">
+        <button type="button" class="mode-btn" id="drawer-mode-episodes" data-switch-mode="episodes">
           🔎 Episodes
         </button>
-        <button type="button" class="mode-btn" id="btn-mode-playlists" data-switch-mode="playlists">
-          🎧 Playlists <span class="nav-mini-count" id="nav-playlist-count" hidden>0</span>
+        <button type="button" class="mode-btn" id="drawer-mode-playlists" data-switch-mode="playlists">
+          🎧 Playlists
         </button>
-        <button type="button" class="mode-btn" id="btn-mode-group" data-switch-mode="group">
-          🎉 Group Game
+        <button type="button" class="mode-btn" id="drawer-mode-group" data-switch-mode="group">
+          🤝 Play with Friends
         </button>
-      </nav>
+      </div>
 
-      <div class="stats-toolbar">
-        <div class="stat-pill stat-pill--streak" id="streak-pill" title="Weekday-safe Daily Double streak (Fri → Mon keeps your streak alive!)">
-          <span class="stat-icon" aria-hidden="true">🔥</span>
-          <div class="stat-text">
-            <span class="stat-val" id="header-streak-val">0</span>
-            <span class="stat-lbl hide-sm">Streak</span>
-          </div>
+      <div class="drawer-stats-row">
+        <span class="stat-pill stat-pill--streak">
+          🔥 <strong id="drawer-streak-val">0</strong> Streak
+        </span>
+        <button type="button" class="stat-pill stat-pill--badges" id="drawer-badges-btn">
+          🏅 <strong id="drawer-badges-val">0/17</strong> Badges
+        </button>
+      </div>
+
+      <div class="drawer-actions-col">
+        <a
+          href="https://www.patreon.com/cw/FunFactsDailyPod"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="patreon-cta-btn patreon-cta-btn--full"
+          id="drawer-btn-patreon"
+        >
+          🧡 Support Fun Facts Daily on Patreon ↗
+        </a>
+
+        <div class="drawer-utility-row">
+          <button type="button" class="icon-action-btn icon-action-btn--install" id="drawer-btn-install-app">
+            📲 Save to Your Phone
+          </button>
+          <button type="button" class="icon-action-btn" id="drawer-btn-sync">
+            🔄 Sync Progress
+          </button>
+          <button type="button" class="icon-action-btn" id="drawer-btn-studio" title="Host Studio">
+            🎙️ Studio
+          </button>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <div class="stat-pill stat-pill--score" id="score-pill" title="Cumulative score across all days">
-          <span class="stat-icon" aria-hidden="true">⭐</span>
-          <div class="stat-text">
-            <span class="stat-val" id="header-score-val">0</span>
-            <span class="stat-lbl hide-sm">Pts</span>
+  <!-- Full Top Site Header (Scrolls Away Naturally as User Scrolls Down) -->
+  <header class="site-header" id="site-header">
+    <div class="header-inner">
+      <div class="header-top-row">
+        <a href="#top" class="brand-logo" id="brand-home-link">
+          <div class="brand-logo-frame">
+            <img
+              src="./icons/logo-192.png"
+              alt="Fun Facts Daily Logo"
+              class="brand-logo-img"
+              width="62"
+              height="62"
+            />
           </div>
+          <div class="brand-copy">
+            <span class="brand-eyebrow">OFFICIAL PODCAST COMPANION</span>
+            <span class="brand-title">Fun Facts <span class="brand-highlight">Daily</span></span>
+          </div>
+        </a>
+
+        <div class="header-cta-cluster">
+          <a
+            href="https://www.patreon.com/cw/FunFactsDailyPod"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="patreon-cta-btn"
+            id="btn-patreon-top"
+          >
+            🧡 Support Fun Facts Daily on Patreon ↗
+          </a>
+
+          <button
+            type="button"
+            class="icon-action-btn icon-action-btn--install"
+            id="btn-install-app"
+            title="Add Fun Facts Daily to your phone Home Screen"
+          >
+            📲 Save to Your Phone
+          </button>
         </div>
+      </div>
 
-        <button type="button" class="stat-pill stat-pill--badges" id="badges-pill" title="View Achievement Badge Board">
-          <span class="stat-icon" aria-hidden="true">🏅</span>
-          <div class="stat-text">
-            <span class="stat-val" id="header-badges-val">0/12</span>
+      <div class="header-bottom-row">
+        <nav class="mode-switcher" aria-label="App Sections">
+          <button type="button" class="mode-btn is-active" id="btn-mode-solo" data-switch-mode="solo">
+            ☀️ Trivia
+          </button>
+          <button type="button" class="mode-btn" id="btn-mode-episodes" data-switch-mode="episodes">
+            🔎 Episodes
+          </button>
+          <button type="button" class="mode-btn" id="btn-mode-playlists" data-switch-mode="playlists">
+            🎧 Playlists <span class="nav-mini-count" id="nav-playlist-count" hidden>0</span>
+          </button>
+          <button type="button" class="mode-btn" id="btn-mode-group" data-switch-mode="group">
+            🤝 Play with Friends
+          </button>
+        </nav>
+
+        <div class="stats-toolbar">
+          <div class="stat-pill stat-pill--streak" id="streak-pill" title="Weekday-safe Daily Double streak (Fri → Mon keeps your streak alive!)">
+            <span class="stat-icon" aria-hidden="true">🔥</span>
+            <div class="stat-text">
+              <span class="stat-val" id="header-streak-val">0</span>
+              <span class="stat-lbl hide-sm">Streak</span>
+            </div>
           </div>
-        </button>
 
-        <button type="button" class="icon-action-btn icon-action-btn--install" id="btn-install-app" title="Install Fun Facts Daily on your phone or computer">
-          📲 <span class="hide-sm">Get App</span>
-        </button>
+          <div class="stat-pill stat-pill--score" id="score-pill" title="Cumulative score across all days">
+            <span class="stat-icon" aria-hidden="true">⭐</span>
+            <div class="stat-text">
+              <span class="stat-val" id="header-score-val">0</span>
+              <span class="stat-lbl hide-sm">Pts</span>
+            </div>
+          </div>
 
-        <button type="button" class="icon-action-btn" id="btn-open-sync" title="Save or transfer your streak, playlists &amp; points across devices">
-          🔄
-        </button>
+          <button type="button" class="stat-pill stat-pill--badges" id="badges-pill" title="View Achievement Badge Board">
+            <span class="stat-icon" aria-hidden="true">🏅</span>
+            <div class="stat-text">
+              <span class="stat-val" id="header-badges-val">0/17</span>
+            </div>
+          </button>
 
-        <button type="button" class="icon-action-btn" id="btn-open-studio" title="Host Studio: Inspect &amp; edit episode questions">
-          🎙️
-        </button>
+          <button type="button" class="icon-action-btn" id="btn-open-sync" title="Save or transfer your streak, playlists &amp; points across devices">
+            🔄
+          </button>
+
+          <button type="button" class="icon-action-btn" id="btn-open-studio" title="Host Studio: Inspect &amp; edit episode questions">
+            🎙️
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -220,7 +330,7 @@
           </div>
           <div class="explore-progress-box">
             <span class="explore-count-big" id="explore-progress-count">0 / 0</span>
-            <span class="explore-count-lbl">Episodes Explored</span>
+            <span class="explore-count-lbl">Questions Answered</span>
           </div>
         </div>
 
@@ -300,7 +410,7 @@
             <div class="section-eyebrow">🏆 TROPHY CABINET</div>
             <h2 class="section-title" id="badges-heading">Achievement Badge Board</h2>
             <p class="section-subtitle">
-              Keep your weekday streak rolling, explore new categories, and climb point milestones to unlock all 12 badges!
+              Keep your weekday streak rolling, explore new categories, climb up to 5,000+ points, and conquer every available question to join the Completionist Club and unlock all 17 badges!
             </p>
           </div>
           <div class="badge-header-actions">
@@ -308,7 +418,7 @@
               📸 Share My Score Card
             </button>
             <div class="explore-progress-box">
-              <span class="explore-count-big" id="badges-unlocked-summary">0 / 12</span>
+              <span class="explore-count-big" id="badges-unlocked-summary">0 / 17</span>
               <span class="explore-count-lbl">Badges Earned</span>
             </div>
           </div>
@@ -326,8 +436,8 @@
       <section class="memphis-card library-player-banner">
         <div class="player-pane-header">
           <span class="pane-kicker">📻 EPISODE PLAYER</span>
-          <button type="button" class="chip-link-btn" id="btn-surprise-episode">
-            🎲 Play a Surprise Episode!
+          <button type="button" class="secondary-cta-btn" id="btn-surprise-episode">
+            🎲 Random Fact Generator
           </button>
         </div>
         <div id="library-player-mount"></div>
@@ -340,7 +450,7 @@
             <div class="section-eyebrow">🔎 FULL PODCAST CATALOG</div>
             <h2 class="section-title" id="episodes-hub-heading">Find &amp; Listen to Episodes</h2>
             <p class="section-subtitle">
-              Search over 400 episodes by keyword, filter by favorite topics, heart episodes you love, build playlists, or jump straight to an episode’s trivia challenge!
+              Search over 400 episodes by keyword, hit the <strong>Random Fact Generator</strong> above, heart episodes you love, build playlists, or jump straight to an episode’s trivia challenge!
             </p>
           </div>
           <div class="explore-progress-box">
@@ -393,7 +503,7 @@
           <div class="section-eyebrow">🎧 YOUR COLLECTIONS</div>
           <h2 class="section-title" style="font-size:1.55rem">My Playlists</h2>
           <p class="section-subtitle" style="margin-bottom:16px">
-            Build road-trip mixes, classroom packs, or bedtime queues—and play them back-to-back automatically!
+            Build road-trip mixes, classroom packs, or bedtime queues—drag episodes to reorder them and play back-to-back automatically!
           </p>
 
           <div class="playlist-selector-list" id="playlist-selector-list"></div>
@@ -434,27 +544,31 @@
             <div id="playlist-player-mount"></div>
           </div>
 
+          <div class="playlist-drag-hint" id="playlist-drag-hint" hidden>
+            ⠿ Drag any episode up or down to rearrange your listening order!
+          </div>
+
           <div class="playlist-tracks-list" id="playlist-tracks-list"></div>
         </section>
       </div>
     </div>
 
     <!-- ==========================================
-         TAB 4: GROUP GAME MODE (KAHOOT + SELF-PACED)
+         TAB 4: PLAY WITH FRIENDS (CUSTOM MULTIPLAYER QUIZZES)
          ========================================== -->
     <div id="group-view" class="view-section" hidden>
-      <!-- 1) GROUP ENTRY HUB -->
+      <!-- 1) PLAY WITH FRIENDS ENTRY HUB -->
       <section class="group-hub-grid" id="group-screen-entry">
         <!-- Player Join Card -->
         <div class="memphis-card group-entry-card">
-          <div class="section-eyebrow">📱 PLAYER CONTROLLER</div>
-          <h2 class="section-title">Join a Group Game</h2>
+          <div class="section-eyebrow">📱 JOIN A FRIEND’S QUIZ</div>
+          <h2 class="section-title">Enter Invite Code</h2>
           <p class="section-subtitle">
-            Enter your host’s game code, pick a fun avatar, and compete for the top spot on the scoreboard!
+            Have an invite code or scanned a QR code? Enter your name below, pick a fun avatar, and race to answer!
           </p>
 
           <form id="group-join-form" class="group-form">
-            <label class="field-label" for="join-code-input">Game Code</label>
+            <label class="field-label" for="join-code-input">Invite Code</label>
             <input
               type="text"
               id="join-code-input"
@@ -465,12 +579,12 @@
               required
             />
 
-            <label class="field-label" for="join-name-input">Your Display Name</label>
+            <label class="field-label" for="join-name-input">Your Name</label>
             <input
               type="text"
               id="join-name-input"
               class="memphis-input"
-              placeholder="Enter your nickname…"
+              placeholder="Enter your name…"
               maxlength="22"
               required
             />
@@ -481,128 +595,195 @@
             <div class="form-error-msg" id="join-error-msg" hidden></div>
 
             <button type="submit" class="primary-cta-btn primary-cta-btn--full">
-              🚀 Join Game Room
+              🚀 Join Quiz
             </button>
           </form>
         </div>
 
-        <!-- Host Launch Card -->
+        <!-- Creator Launch Card -->
         <div class="memphis-card group-entry-card group-entry-card--host">
-          <div class="section-eyebrow">🎙️ GAME HOST</div>
-          <h2 class="section-title">Host a Group Game</h2>
+          <div class="section-eyebrow">🤝 PLAY WITH FRIENDS</div>
+          <h2 class="section-title">Create a Custom Quiz</h2>
           <p class="section-subtitle">
-            Run a live Kahoot-style trivia night on a shared screen, or create a 1-day or 1-week challenge code with an instant QR code for classrooms, friends, or family!
+            Name your own custom quiz, hand-pick episodes or use Quick Pick to auto-build 10, 15, or 20 topic questions, then invite friends via code or QR!
           </p>
 
           <ul class="host-perks-list">
-            <li>🎯 Choose your favorite topics &amp; number of questions</li>
-            <li>🔑 Pick a custom unique code or generate a 6-digit code</li>
-            <li>📲 Instant scannable QR code for phones &amp; tablets</li>
-            <li>⏱️ Active for 1 Hour, 1 Day, or 1 Week (auto-expires for reuse!)</li>
+            <li>✏️ Name your custom quiz &amp; pick exact episodes (or ⚡ Quick Pick 10, 15, or 20 by topic!)</li>
+            <li>⏱️ Choose the answer timer per question &amp; pause live anytime</li>
+            <li>🥇 +10 pts per correct answer (+5 bonus for 1st correct, +2 bonus for 2nd!)</li>
+            <li>📲 Instant Invite Code &amp; QR Code + Top-3 leaderboard after every question</li>
           </ul>
 
           <button type="button" class="primary-cta-btn primary-cta-btn--full" id="btn-go-host-setup">
-            ✨ Set Up a Game as Host →
+            ✨ Create a Custom Quiz →
           </button>
         </div>
       </section>
 
-      <!-- 2) HOST CONFIGURATION SCREEN -->
+      <!-- 2) CUSTOM QUIZ BUILDER SCREEN -->
       <section class="memphis-card group-setup-card" id="group-screen-host-setup" hidden>
         <div class="setup-top-row">
           <div>
-            <div class="section-eyebrow">🎛️ HOST GAME BUILDER</div>
-            <h2 class="section-title">Configure Your Group Game</h2>
+            <div class="section-eyebrow">🎛️ CUSTOM QUIZ BUILDER</div>
+            <h2 class="section-title">Build Your Quiz &amp; Invite Friends</h2>
           </div>
           <button type="button" class="secondary-cta-btn" data-group-back="entry">
             ← Back
           </button>
         </div>
 
-        <form id="host-create-form" class="host-setup-grid">
+        <form id="host-create-form" class="quiz-builder-layout">
+          <!-- LEFT COLUMN: NAME + QUICK PICK + EPISODE PICKER -->
           <div class="setup-block">
-            <h3 class="setup-step-title">1. Narrow Question Topics</h3>
-            <p class="setup-step-hint">Leave "All Topics" active or select specific focus areas (<span id="host-pool-count">404</span> matching questions available).</p>
-            <div class="host-topics-grid" id="host-topics-grid"></div>
+            <h3 class="setup-step-title">1. Name Your Custom Quiz</h3>
+            <input
+              type="text"
+              id="host-quiz-name"
+              class="memphis-input"
+              placeholder="e.g. Friday Night Fun Facts, Animal Kingdom Showdown…"
+              maxlength="55"
+              value="Fun Facts Showdown"
+              required
+            />
 
-            <label class="field-label" for="host-qcount-pills" style="margin-top:1rem">Number of Questions</label>
-            <div class="segmented-pills" id="host-qcount-pills">
-              <button type="button" class="seg-pill" data-qcount="5">5 Quick</button>
-              <button type="button" class="seg-pill is-active" data-qcount="10">10 Classic</button>
-              <button type="button" class="seg-pill" data-qcount="15">15 Deep</button>
-              <button type="button" class="seg-pill" data-qcount="20">20 Marathon</button>
+            <h3 class="setup-step-title" style="margin-top:1.35rem">2. Select Questions</h3>
+
+            <!-- Quick Pick Generator Box -->
+            <div class="quick-pick-box">
+              <div class="quick-pick-header">
+                <strong>⚡ Quick Pick Generator</strong>
+                <span>Choose a general topic &amp; auto-populate 10, 15, or 20 questions!</span>
+              </div>
+
+              <div class="quick-pick-controls">
+                <div>
+                  <label class="field-label" for="host-quick-topic">Topic</label>
+                  <select id="host-quick-topic" class="memphis-input"></select>
+                </div>
+
+                <div>
+                  <span class="field-label">Question Count</span>
+                  <div class="segmented-pills" id="host-qcount-pills">
+                    <button type="button" class="seg-pill is-active" data-qcount="10">10</button>
+                    <button type="button" class="seg-pill" data-qcount="15">15</button>
+                    <button type="button" class="seg-pill" data-qcount="20">20</button>
+                  </div>
+                </div>
+              </div>
+
+              <button type="button" class="secondary-cta-btn" id="btn-apply-quick-pick" style="width:100%;margin-top:10px">
+                ⚡ Auto-Populate 10 Questions
+              </button>
+            </div>
+
+            <!-- Hand-Pick Specific Episodes Box -->
+            <div class="episode-picker-box">
+              <div class="quick-pick-header">
+                <strong>🎯 Or Hand-Pick Specific Episodes</strong>
+                <span>Check or uncheck any episode below to customize your quiz questions:</span>
+              </div>
+
+              <div class="episode-picker-filters">
+                <input
+                  type="search"
+                  id="host-ep-search"
+                  class="memphis-input"
+                  placeholder="Search episodes (e.g. Sharks, Pizza, Space, Inventors)…"
+                />
+                <select id="host-ep-cat-filter" class="memphis-input"></select>
+              </div>
+
+              <div class="host-episode-picker-list" id="host-episode-picker-list"></div>
             </div>
           </div>
 
+          <!-- RIGHT COLUMN: SELECTED ROSTER + TIMER + INVITE FRIENDS -->
           <div class="setup-block">
-            <h3 class="setup-step-title">2. Pacing &amp; Code Expiration</h3>
-
-            <span class="field-label">How will players play?</span>
-            <div class="pacing-cards" id="host-pacing-cards">
-              <button type="button" class="pacing-option is-active" data-pacing="live">
-                <strong>📺 Live Kahoot Style</strong>
-                <span>Host controls each question on a shared screen while players answer on their devices.</span>
-              </button>
-              <button type="button" class="pacing-option" data-pacing="self_paced">
-                <strong>🏁 Self-Paced Leaderboard</strong>
-                <span>Players complete your question set anytime before the code expires—ideal for 1-day or 1-week codes!</span>
-              </button>
+            <div class="selected-roster-box">
+              <div class="selected-roster-top">
+                <div>
+                  <span class="section-eyebrow">YOUR QUIZ LINEUP</span>
+                  <h3 class="setup-step-title" style="margin:0">
+                    <span id="host-selected-count">0</span> Questions Selected
+                  </h3>
+                </div>
+                <button type="button" class="chip-link-btn chip-link-btn--danger" id="btn-clear-host-questions">
+                  Clear All
+                </button>
+              </div>
+              <div class="host-selected-chips" id="host-selected-chips"></div>
             </div>
 
-            <label class="checkbox-row" id="host-speed-timer-wrap">
-              <input type="checkbox" id="host-speed-timer" checked />
-              <span>Award speed bonus points (up to +50 pts for fast answers in Live Mode)</span>
-            </label>
+            <h3 class="setup-step-title" style="margin-top:1.25rem">3. Answer Timer Per Question</h3>
+            <p class="setup-step-hint">
+              Once the game starts, each question counts down and automatically advances to the Top 3 leaderboard when time is up!
+            </p>
+            <div class="segmented-pills" id="host-timer-pills">
+              <button type="button" class="seg-pill" data-timer-sec="15">15s</button>
+              <button type="button" class="seg-pill is-active" data-timer-sec="20">20s</button>
+              <button type="button" class="seg-pill" data-timer-sec="30">30s</button>
+              <button type="button" class="seg-pill" data-timer-sec="45">45s</button>
+              <button type="button" class="seg-pill" data-timer-sec="60">60s</button>
+            </div>
 
-            <span class="field-label" style="margin-top:1rem">Keep Game Code Active For</span>
+            <div class="scoring-rules-callout">
+              <strong>🏅 Speed-Bonus Scoring Rules:</strong>
+              <ul>
+                <li>Each correct answer earns <strong>10 points</strong></li>
+                <li>🥇 1st player to answer correctly gets <strong>+5 extra points</strong> (15 pts)</li>
+                <li>🥈 2nd player to answer correctly gets <strong>+2 extra points</strong> (12 pts)</li>
+              </ul>
+            </div>
+
+            <span class="field-label" style="margin-top:1rem">Keep Invite Code Active For</span>
             <div class="segmented-pills" id="host-duration-pills">
-              <button type="button" class="seg-pill is-active" data-duration="1h">1 Hour</button>
-              <button type="button" class="seg-pill" data-duration="1d">1 Day</button>
+              <button type="button" class="seg-pill" data-duration="1h">1 Hour</button>
+              <button type="button" class="seg-pill is-active" data-duration="1d">1 Day</button>
               <button type="button" class="seg-pill" data-duration="1w">1 Week</button>
             </div>
-            <p class="setup-micro-note">
-              Once this time expires, the code automatically deactivates so another host can reuse it on another day.
-            </p>
 
-            <h3 class="setup-step-title" style="margin-top:1.25rem">3. Unique Game Code</h3>
-            <div class="code-builder-row">
-              <input
-                type="text"
-                id="host-code-input"
-                class="memphis-input memphis-input--code"
-                maxlength="8"
-                autocomplete="off"
-                required
-              />
-              <button type="button" class="secondary-cta-btn" id="btn-random-code">
-                🎲 Random 6-Char
-              </button>
+            <div class="custom-code-details">
+              <label class="field-label" for="host-code-input" style="margin-top:1rem">Invite Code (Auto-Generated or Custom)</label>
+              <div class="code-builder-row">
+                <input
+                  type="text"
+                  id="host-code-input"
+                  class="memphis-input memphis-input--code"
+                  maxlength="8"
+                  autocomplete="off"
+                  required
+                />
+                <button type="button" class="secondary-cta-btn" id="btn-random-code">
+                  🎲 New Code
+                </button>
+              </div>
+              <div class="code-validation-status" id="host-code-status">Checking code availability…</div>
             </div>
-            <div class="code-validation-status" id="host-code-status">Checking code availability…</div>
 
             <div class="form-error-msg" id="host-create-error" hidden></div>
 
-            <button type="submit" class="primary-cta-btn primary-cta-btn--full" id="btn-launch-room" style="margin-top:1rem">
-              🎉 Launch Game &amp; Generate QR Code
+            <button type="submit" class="primary-cta-btn primary-cta-btn--full" id="btn-launch-room" style="margin-top:1.15rem">
+              💌 Invite Friends
             </button>
           </div>
         </form>
       </section>
 
-      <!-- 3) HOST LIVE ROOM / LOBBY / KAHOOT SCREEN -->
+      <!-- 3) GAME CREATOR LIVE ROOM / INVITE LOBBY / LEADERBOARD SCREEN -->
       <section class="memphis-card group-room-card" id="group-screen-host-room" hidden>
         <div class="room-topbar">
           <div class="room-code-cluster">
-            <span class="room-lbl">GAME CODE:</span>
+            <span class="room-lbl">INVITE CODE:</span>
             <span class="room-code-badge" id="host-room-code-display">------</span>
-            <span class="room-expiry-pill" id="host-room-expiry">1h left</span>
+            <span class="room-expiry-pill" id="host-room-expiry">1d left</span>
           </div>
           <div class="room-top-actions">
             <button type="button" class="chip-link-btn" id="btn-copy-join-link">
-              🔗 Copy Join Link
+              🔗 Copy Invite Link
             </button>
             <button type="button" class="chip-link-btn" id="btn-open-test-player" title="Open a player view in a new tab to test multiplayer right away">
-              📱 Open Player Window
+              📱 Open Test Player
             </button>
             <button type="button" class="chip-link-btn chip-link-btn--danger" id="btn-end-host-room">
               ✕ End Game
@@ -613,7 +794,7 @@
         <div id="host-stage-mount"></div>
       </section>
 
-      <!-- 4) PLAYER DEVICE CONTROLLER SCREEN -->
+      <!-- 4) PLAYER DEVICE SCREEN -->
       <section class="memphis-card group-room-card" id="group-screen-player-room" hidden>
         <div class="room-topbar">
           <div class="player-identity-pill" id="player-identity-pill"></div>
@@ -632,6 +813,167 @@
   </main>
 
   <footer class="site-footer">
+    <div class="footer-platform-section">
+      <h2 class="footer-platform-heading">Follow Fun Facts Daily on your favorite podcast platform</h2>
+      <div class="platform-icons-row" aria-label="Podcast Platforms">
+        <!-- Apple Podcasts -->
+        <a
+          href="https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--apple"
+          aria-label="Apple Podcasts"
+          title="Apple Podcasts"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 0 0-3.54 19.36c.2-.48.36-1.08.45-1.62a6.5 6.5 0 1 1 6.18 0c.09.54.25 1.14.45 1.62A10 10 0 0 0 12 2zm0 5.1a4.9 4.9 0 0 0-1.95 9.4c-.11-.58-.19-1.15-.21-1.64a3.3 3.3 0 1 1 4.32 0c-.02.49-.1 1.06-.21 1.64A4.9 4.9 0 0 0 12 7.1zm0 3.1a1.85 1.85 0 0 0-.75 3.54l-.48 5.93c-.05.68.48 1.28 1.23 1.28s1.28-.6 1.23-1.28l-.48-5.93A1.85 1.85 0 0 0 12 10.2z"/>
+          </svg>
+        </a>
+
+        <!-- Spotify -->
+        <a
+          href="https://open.spotify.com/show/6Zc3C8l4L3AAdEKIkjpIOY"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--spotify"
+          aria-label="Spotify"
+          title="Spotify"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.58 14.42a.62.62 0 0 1-.86.2c-2.35-1.44-5.31-1.76-8.8-.96a.62.62 0 0 1-.28-1.22c3.82-.87 7.1-.5 9.74 1.12.3.18.39.57.2.86zm1.22-2.72a.78.78 0 0 1-1.07.26c-2.69-1.65-6.79-2.13-9.97-1.16a.78.78 0 1 1-.45-1.5c3.64-1.1 8.16-.57 11.23 1.32.37.23.49.71.26 1.08zm.11-2.83C14.69 8.95 9.37 8.77 6.3 9.7a.94.94 0 1 1-.54-1.8c3.53-1.07 9.4-.86 13.11 1.34a.94.94 0 0 1-.96 1.63z"/>
+          </svg>
+        </a>
+
+        <!-- Amazon Music -->
+        <a
+          href="https://music.amazon.com/podcasts/c7c07d39-5d4e-4098-a172-ac831e041921/fun-facts-daily"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--amazon"
+          aria-label="Amazon Music"
+          title="Amazon Music"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M15.5 5.5v8.25a2.75 2.75 0 1 1-1.6-2.49V7.6l-5 1.15v6.5a2.75 2.75 0 1 1-1.6-2.49V7.5l8.2-2zM4.2 17.8c2.25 1.55 5.05 2.35 7.9 2.35 2.65 0 5.3-.7 7.45-2.05.32-.2.05-.52-.27-.38-2.25 1-4.78 1.5-7.28 1.5-2.72 0-5.4-.62-7.55-1.78-.3-.17-.56.15-.25.36zm16.45-.55c-.25-.3-1.62-.15-2.24-.08-.19.02-.22-.14-.05-.26 1.1-.77 2.9-.55 3.11-.29.21.26-.06 2.08-1.09 2.95-.16.13-.31.06-.24-.11.23-.58.76-1.9.51-2.21z"/>
+          </svg>
+        </a>
+
+        <!-- YouTube -->
+        <a
+          href="https://www.youtube.com/@KyleWoodArtEd/podcasts"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--youtube"
+          aria-label="YouTube Podcasts"
+          title="YouTube Podcasts"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M21.58 7.19a2.75 2.75 0 0 0-1.94-1.95C17.93 4.78 12 4.78 12 4.78s-5.93 0-7.64.46a2.75 2.75 0 0 0-1.94 1.95C1.96 8.9 1.96 12 1.96 12s0 3.1.46 4.81a2.75 2.75 0 0 0 1.94 1.95c1.71.46 7.64.46 7.64.46s5.93 0 7.64-.46a2.75 2.75 0 0 0 1.94-1.95c.46-1.71.46-4.81.46-4.81s0-3.1-.46-4.81zM10 15.15V8.85L15.45 12 10 15.15z"/>
+          </svg>
+        </a>
+
+        <!-- Pocket Casts -->
+        <a
+          href="https://pca.st/itunes/1810507693"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--pocketcasts"
+          aria-label="Pocket Casts"
+          title="Pocket Casts"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 1 0 0 20v-2.6a7.4 7.4 0 1 1 7.4-7.4H22A10 10 0 0 0 12 2zm0 4.2a5.8 5.8 0 1 0 0 11.6v-2.4a3.4 3.4 0 1 1 3.4-3.4h2.4A5.8 5.8 0 0 0 12 6.2z"/>
+          </svg>
+        </a>
+
+        <!-- Overcast -->
+        <a
+          href="https://overcast.fm/itunes1810507693"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--overcast"
+          aria-label="Overcast"
+          title="Overcast"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-3.6-4.2 2.4-6.3a1.3 1.3 0 1 1 2.4 0l2.4 6.3-1.45.55-.85-2.25h-2.6l-.85 2.25-1.45-.55zm2.7-3.6h1.8L12 9.8l-.9 2.4zM7.4 7.8a6.2 6.2 0 0 0 0 8.4l1.15-1.15a4.6 4.6 0 0 1 0-6.1L7.4 7.8zm9.2 0-1.15 1.15a4.6 4.6 0 0 1 0 6.1l1.15 1.15a6.2 6.2 0 0 0 0-8.4z"/>
+          </svg>
+        </a>
+
+        <!-- Castbox -->
+        <a
+          href="https://castbox.fm/vic/1810507693"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--castbox"
+          aria-label="Castbox"
+          title="Castbox"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm2.2 6.5a1 1 0 0 0-1 1v3a1 1 0 1 0 2 0v-3a1 1 0 0 0-1-1zm3.2-2.5a1 1 0 0 0-1 1v8a1 1 0 1 0 2 0V8a1 1 0 0 0-1-1zm3.2 1.8a1 1 0 0 0-1 1v4.4a1 1 0 1 0 2 0V9.8a1 1 0 0 0-1-1zm3.2 1.2a1 1 0 0 0-1 1v2a1 1 0 1 0 2 0v-2a1 1 0 0 0-1-1z"/>
+          </svg>
+        </a>
+
+        <!-- Castro -->
+        <a
+          href="https://castro.fm/itunes/1810507693"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--castro"
+          aria-label="Castro"
+          title="Castro"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M12 2a10 10 0 1 0 6.3 17.77l-1.67-2.08a7.35 7.35 0 1 1 0-11.38l1.67-2.08A10 10 0 0 0 12 2zm0 6.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/>
+          </svg>
+        </a>
+
+        <!-- Podcast Addict -->
+        <a
+          href="https://podcastaddict.com/feed/https%3A%2F%2Ffeeds.megaphone.fm%2FARML3789803370"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--addict"
+          aria-label="Podcast Addict"
+          title="Podcast Addict"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <path d="M12 3a8 8 0 0 0-8 8v5a3 3 0 0 0 3 3h1.5v-6H6v-2a6 6 0 1 1 12 0v2h-2.5v6H17a3 3 0 0 0 3-3v-5a8 8 0 0 0-8-8zm-1 6.5v5l4.2-2.5L11 9.5z"/>
+          </svg>
+        </a>
+
+        <!-- PodLink (iHeartRadio, Goodpods, Pandora & All Podcast Apps) -->
+        <a
+          href="https://pod.link/1810507693"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--podlink"
+          aria-label="More Platforms on PodLink (iHeartRadio, Goodpods, Pandora & more)"
+          title="More Platforms on PodLink (iHeartRadio, Goodpods & more)"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        </a>
+
+        <!-- RSS Feed -->
+        <a
+          href="https://feeds.megaphone.fm/ARML3789803370"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="platform-icon-link platform-icon--rss"
+          aria-label="Podcast RSS Feed"
+          title="Podcast RSS Feed"
+        >
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+            <circle cx="6.2" cy="17.8" r="2.2"/>
+            <path d="M4 10.2v2.8a7.2 7.2 0 0 1 7.2 7.2H14A10 10 0 0 0 4 10.2zm0-6.2v2.8A13.2 13.2 0 0 1 17.2 20H20A16 16 0 0 0 4 4z"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
     <div class="footer-inner">
       <p>
         Built for listeners of <strong>Fun Facts Daily</strong> with Kyle Wood • New episodes every Monday–Friday!
@@ -641,12 +983,12 @@
           Website ↗
         </a>
         <span>•</span>
-        <a href="https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693" target="_blank" rel="noopener noreferrer">
-          Apple Podcasts ↗
+        <a href="https://www.patreon.com/cw/FunFactsDailyPod" target="_blank" rel="noopener noreferrer">
+          Patreon ↗
         </a>
         <span>•</span>
-        <a href="https://feeds.megaphone.fm/ARML3789803370" target="_blank" rel="noopener noreferrer">
-          RSS Feed ↗
+        <a href="https://pod.link/1810507693" target="_blank" rel="noopener noreferrer">
+          All Podcast Links ↗
         </a>
       </div>
     </div>
@@ -713,36 +1055,39 @@
   </div>
 
   <!-- ==========================================
-       MODAL 3: INSTALL MOBILE APP (PWA GUIDE)
+       MODAL 3: SAVE TO YOUR PHONE (FALLBACK FOR SAFARI / NON-PROMPT BROWSERS)
        ========================================== -->
   <div class="modal-backdrop" id="install-app-modal" hidden>
     <div class="memphis-card modal-dialog" role="dialog" aria-modal="true" aria-labelledby="install-modal-title">
       <div class="modal-header">
-        <h2 id="install-modal-title">📲 Install the Fun Facts Daily App</h2>
+        <h2 id="install-modal-title">📲 Save Fun Facts Daily to Your Phone</h2>
         <button type="button" class="modal-close-btn" data-close-modal="install-app-modal" aria-label="Close">✕</button>
       </div>
-      <p class="modal-desc">
-        Add <strong>Fun Facts Daily</strong> straight to your Home Screen for 1-tap access to daily trivia, lock-screen episode playback, and your saved playlists—100% free, no App Store download required!
-      </p>
+
+      <div class="install-icon-preview">
+        <img src="./icons/logo-192.png" alt="Fun Facts Daily App Icon" width="76" height="76" />
+        <div>
+          <strong>Fun Facts Daily</strong>
+          <span>Apple’s Safari browser requires tapping its Share button below to add an app icon to your Home Screen:</span>
+        </div>
+      </div>
 
       <div id="native-pwa-install-wrap" hidden style="margin-bottom:16px">
         <button type="button" class="primary-cta-btn primary-cta-btn--full" id="btn-trigger-native-pwa">
-          ✨ Install App Now (1 Click)
+          ✨ Add to Home Screen Now
         </button>
       </div>
 
       <div class="install-steps-box">
-        <h3>🍏 On iPhone or iPad (Safari):</h3>
+        <h3>🍏 iPhone &amp; iPad (Safari — 2 Quick Taps):</h3>
         <ol>
-          <li>Tap the <strong>Share</strong> icon <code>[↑]</code> at the bottom of Safari.</li>
-          <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
-          <li>Tap <strong>Add</strong>—the sunny Fun Facts Daily icon appears right alongside your apps!</li>
+          <li>Tap Safari’s <strong>Share</strong> icon <code>[↑]</code> at the bottom of your screen.</li>
+          <li>Tap <strong>Add to Home Screen</strong> → <strong>Add</strong>!</li>
         </ol>
-        <h3>🤖 On Android (Chrome):</h3>
-        <ol>
-          <li>Tap the <strong>⋮ Menu</strong> in the top-right corner of Chrome.</li>
-          <li>Tap <strong>Add to Home screen</strong> or <strong>Install app</strong>.</li>
-        </ol>
+        <h3>🤖 Android &amp; Chrome:</h3>
+        <p style="margin:0;line-height:1.5">
+          On Android Chrome, tapping <strong>Save to Your Phone</strong> opens the install prompt directly in one tap (or tap <strong>⋮ → Add to Home screen</strong>).
+        </p>
       </div>
     </div>
   </div>

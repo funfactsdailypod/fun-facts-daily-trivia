@@ -1,5 +1,15 @@
 import { BADGES, SHOW_CONFIG } from './config.js';
 import { formatPubDate } from './audio-player.js';
+import { getAnsweredGuidsSet } from './storage.js';
+
+let cachedLogoImg = null;
+if (typeof Image !== 'undefined') {
+  const img = new Image();
+  img.onload = () => {
+    cachedLogoImg = img;
+  };
+  img.src = './icons/logo-192.png';
+}
 
 function drawRoundedRect(ctx, x, y, w, h, r) {
   const radius = Math.min(r, w / 2, h / 2);
@@ -91,7 +101,6 @@ export function renderScoreCardCanvas(canvas, { playerState, episode = null, att
   ctx.bezierCurveTo(176, 134, 204, 134, 232, 98);
   ctx.stroke();
 
-  // Teal Donut Top-Right
   ctx.strokeStyle = '#00BFA6';
   ctx.lineWidth = 20;
   ctx.beginPath();
@@ -115,16 +124,29 @@ export function renderScoreCardCanvas(canvas, { playerState, episode = null, att
     ctx.fillRect(110 + i * stripeW, 59, stripeW, 16);
   });
 
-  // 3. Brand Header Pill
-  drawMemphisBox(ctx, 270, 108, 540, 66, 33, '#FFD23F', 6);
+  // 3. Brand Header Pill + Podcast Logo
+  drawMemphisBox(ctx, 235, 102, 610, 74, 37, '#FFD23F', 6);
+  if (cachedLogoImg) {
+    ctx.save();
+    drawRoundedRect(ctx, 250, 111, 56, 56, 14);
+    ctx.clip();
+    ctx.drawImage(cachedLogoImg, 250, 111, 56, 56);
+    ctx.restore();
+    ctx.save();
+    drawRoundedRect(ctx, 250, 111, 56, 56, 14);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#181824';
+    ctx.stroke();
+    ctx.restore();
+  }
   ctx.fillStyle = '#181824';
   ctx.font = '800 27px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('💡 FUN FACTS DAILY • TRIVIA', W / 2, 142);
+  ctx.fillText('FUN FACTS DAILY • TRIVIA', cachedLogoImg ? W / 2 + 28 : W / 2, 140);
 
   // 4. Episode / Daily Double Headline Box
-  drawMemphisBox(ctx, 104, 206, W - 208, 256, 28, '#FFF6DC', 8);
+  drawMemphisBox(ctx, 104, 200, W - 208, 252, 28, '#FFF6DC', 8);
 
   if (episode && attempt) {
     const isCorrect = Boolean(attempt.correct);
@@ -133,18 +155,17 @@ export function renderScoreCardCanvas(canvas, { playerState, episode = null, att
       ? `⚡ DAILY DOUBLE NAILED! +${SHOW_CONFIG.points.dailyDouble} PTS`
       : '💡 TODAY’S FUN FACT UNLOCKED!';
 
-    drawMemphisBox(ctx, 250, 230, 580, 56, 28, pillColor, 4);
+    drawMemphisBox(ctx, 250, 222, 580, 54, 27, pillColor, 4);
     ctx.fillStyle = '#181824';
     ctx.font = '800 24px "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText(pillText, W / 2, 259);
+    ctx.fillText(pillText, W / 2, 250);
 
     ctx.fillStyle = '#181824';
-    ctx.font = '700 38px "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif';
-    wrapCenteredText(ctx, episode.title, W / 2, 332, W - 280, 44, 2);
+    ctx.font = '700 37px "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif';
+    wrapCenteredText(ctx, episode.title, W / 2, 322, W - 280, 42, 2);
 
-    // Spoiler-free 4-option visual grid (shows pick accuracy without spoiling answer text!)
-    const tileY = 402;
-    const tileSize = 36;
+    const tileY = 388;
+    const tileSize = 34;
     const gap = 16;
     const startX = W / 2 - (4 * tileSize + 3 * gap) / 2;
     for (let i = 0; i < 4; i++) {
@@ -156,24 +177,25 @@ export function renderScoreCardCanvas(canvas, { playerState, episode = null, att
     }
 
     ctx.fillStyle = '#5C5C74';
-    ctx.font = '700 21px "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText(formatPubDate(episode.pubDate), W / 2, 448);
+    ctx.font = '700 20px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.fillText(formatPubDate(episode.pubDate), W / 2, 434);
   } else {
-    drawMemphisBox(ctx, 290, 232, 500, 54, 27, '#FF7A00', 4);
+    drawMemphisBox(ctx, 290, 224, 500, 54, 27, '#FF7A00', 4);
     ctx.fillStyle = '#FFFFFF';
     ctx.font = '800 24px "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText('🏆 ALL-TIME LISTENER SCORECARD', W / 2, 260);
+    ctx.fillText('🏆 ALL-TIME LISTENER SCORECARD', W / 2, 252);
 
     ctx.fillStyle = '#181824';
     ctx.font = '700 42px "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText('Testing My Daily Curiosity!', W / 2, 344);
+    ctx.fillText('Testing My Daily Curiosity!', W / 2, 336);
 
     ctx.fillStyle = '#5C5C74';
     ctx.font = '700 25px "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText('400+ Episodes of Family-Friendly Fun Facts', W / 2, 405);
+    ctx.fillText('400+ Episodes of Family-Friendly Fun Facts', W / 2, 398);
   }
 
-  // 5. Three Big Stat Cards (Streak | Points | Explored)
+  // 5. Three Big Stat Cards (Streak | Points | Questions Played)
+  const answeredTotal = getAnsweredGuidsSet(playerState).size;
   const stats = [
     {
       icon: '🔥',
@@ -191,7 +213,7 @@ export function renderScoreCardCanvas(canvas, { playerState, episode = null, att
     },
     {
       icon: '🧭',
-      value: `${(playerState.seenArchiveGuids?.length || 0) + Object.keys(playerState.dailyAttempts || {}).length}`,
+      value: `${answeredTotal}`,
       label: 'QUESTIONS PLAYED',
       sub: 'Archive + Daily',
       bg: '#D8F8E8'
@@ -203,58 +225,63 @@ export function renderScoreCardCanvas(canvas, { playerState, episode = null, att
   const cardsStartX = (W - (cardW * 3 + cardGap * 2)) / 2;
   stats.forEach((st, idx) => {
     const x = cardsStartX + idx * (cardW + cardGap);
-    const y = 496;
-    drawMemphisBox(ctx, x, y, cardW, 206, 24, st.bg, 7);
+    const y = 478;
+    drawMemphisBox(ctx, x, y, cardW, 192, 24, st.bg, 7);
 
     ctx.fillStyle = '#181824';
-    ctx.font = '40px system-ui, sans-serif';
-    ctx.fillText(st.icon, x + cardW / 2, y + 44);
+    ctx.font = '38px system-ui, sans-serif';
+    ctx.fillText(st.icon, x + cardW / 2, y + 40);
 
-    ctx.font = '700 54px "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText(st.value, x + cardW / 2, y + 108);
+    ctx.font = '700 50px "Fredoka", "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.fillText(st.value, x + cardW / 2, y + 98);
 
-    ctx.font = '800 20px "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText(st.label, x + cardW / 2, y + 154);
+    ctx.font = '800 19px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.fillText(st.label, x + cardW / 2, y + 142);
 
     ctx.fillStyle = '#4B4B63';
-    ctx.font = '700 18px "Plus Jakarta Sans", system-ui, sans-serif';
-    ctx.fillText(st.sub, x + cardW / 2, y + 182);
+    ctx.font = '700 17px "Plus Jakarta Sans", system-ui, sans-serif';
+    ctx.fillText(st.sub, x + cardW / 2, y + 168);
   });
 
-  // 6. Unlocked Badges Showcase Shelf
+  // 6. Unlocked Badges Showcase Shelf (2 Balanced Rows for 17 Badges)
   const unlockedIds = Object.keys(playerState.unlockedBadges || {});
   const earnedBadges = BADGES.filter((b) => unlockedIds.includes(b.id));
 
-  drawMemphisBox(ctx, 104, 736, W - 208, 148, 24, '#FFFFFF', 6);
+  drawMemphisBox(ctx, 104, 696, W - 208, 198, 24, '#FFFFFF', 6);
   ctx.fillStyle = '#181824';
-  ctx.font = '800 21px "Plus Jakarta Sans", system-ui, sans-serif';
+  ctx.font = '800 20px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(
     `🏅 ACHIEVEMENT BADGES EARNED (${earnedBadges.length} / ${BADGES.length})`,
     W / 2,
-    768
+    726
   );
 
-  const badgeSlotSize = 54;
+  const rowSplit = Math.ceil(BADGES.length / 2);
+  const rows = [BADGES.slice(0, rowSplit), BADGES.slice(rowSplit)];
+  const badgeSlotSize = 48;
   const badgeGap = 14;
-  const totalSlots = BADGES.length;
-  const shelfStartX = (W - (totalSlots * badgeSlotSize + (totalSlots - 1) * badgeGap)) / 2;
-  BADGES.forEach((b, idx) => {
-    const bx = shelfStartX + idx * (badgeSlotSize + badgeGap);
-    const by = 798;
-    const isEarned = unlockedIds.includes(b.id);
-    drawMemphisBox(ctx, bx, by, badgeSlotSize, badgeSlotSize, 14, isEarned ? b.color : '#ECECF4', isEarned ? 3 : 0);
-    ctx.save();
-    if (!isEarned) ctx.globalAlpha = 0.28;
-    ctx.font = '28px system-ui, sans-serif';
-    ctx.fillText(b.icon, bx + badgeSlotSize / 2, by + badgeSlotSize / 2 + 2);
-    ctx.restore();
+
+  rows.forEach((rowBadges, rIdx) => {
+    const rowWidth = rowBadges.length * badgeSlotSize + (rowBadges.length - 1) * badgeGap;
+    const rowStartX = (W - rowWidth) / 2;
+    const by = 752 + rIdx * 64;
+    rowBadges.forEach((b, idx) => {
+      const bx = rowStartX + idx * (badgeSlotSize + badgeGap);
+      const isEarned = unlockedIds.includes(b.id);
+      drawMemphisBox(ctx, bx, by, badgeSlotSize, badgeSlotSize, 13, isEarned ? b.color : '#ECECF4', isEarned ? 3 : 0);
+      ctx.save();
+      if (!isEarned) ctx.globalAlpha = 0.28;
+      ctx.font = '25px system-ui, sans-serif';
+      ctx.fillText(b.icon, bx + badgeSlotSize / 2, by + badgeSlotSize / 2 + 2);
+      ctx.restore();
+    });
   });
 
   // 7. Bottom Call-to-Action Banner
-  drawMemphisBox(ctx, 160, 916, W - 320, 72, 36, '#FF7A00', 6);
+  drawMemphisBox(ctx, 160, 918, W - 320, 70, 35, '#FF7A00', 6);
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '800 26px "Plus Jakarta Sans", system-ui, sans-serif';
-  ctx.fillText('🎙️ Play & Listen Free • funfactsdailypod.com', W / 2, 953);
+  ctx.fillText('🎙️ Play & Listen Free • funfactsdailypod.com', W / 2, 954);
 }
 
 export function buildShareCaption({ playerState, episode = null, attempt = null }) {

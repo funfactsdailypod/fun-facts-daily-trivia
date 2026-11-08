@@ -1,7 +1,7 @@
 {
   "name": "Fun Facts Daily — Podcast & Trivia",
   "short_name": "Fun Facts",
-  "description": "Play the Daily Double trivia challenge, search 400+ episodes, build favorite playlists, and host multiplayer Group Games!",
+  "description": "Play the Daily Double trivia challenge, search 400+ episodes, build favorite playlists, and play custom quizzes with friends!",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
@@ -10,32 +10,54 @@
   "theme_color": "#FFD23F",
   "icons": [
     {
-      "src": "./icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "./icons/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
     {
       "name": "Daily Double Trivia",
       "short_name": "Trivia",
-      "url": "./?tab=solo"
+      "url": "./?tab=solo",
+      "icons": [{ "src": "./icons/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "Search Episodes",
       "short_name": "Episodes",
-      "url": "./?tab=episodes"
+      "url": "./?tab=episodes",
+      "icons": [{ "src": "./icons/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "My Playlists",
       "short_name": "Playlists",
-      "url": "./?tab=playlists"
+      "url": "./?tab=playlists",
+      "icons": [{ "src": "./icons/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "name": "Group Game",
-      "short_name": "Group Game",
-      "url": "./?tab=group"
+      "name": "Play with Friends",
+      "short_name": "Friends",
+      "url": "./?tab=group",
+      "icons": [{ "src": "./icons/logo-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

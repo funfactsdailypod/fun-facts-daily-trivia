@@ -8,6 +8,8 @@ import {
   encodePlaylistShareParam,
   evaluateNewBadges,
   exportSyncCode,
+  getAnsweredGuidsSet,
+  getBadgeMeta,
   getWeekendKey,
   importSyncCode,
   isWeekendDay,
@@ -17,17 +19,20 @@ import {
   markEpisodePlayed,
   markGroupGamePlayed,
   moveEpisodeInPlaylist,
+  moveFavoriteEpisode,
   recordArchiveSubmission,
   recordDailyDoubleSubmission,
   recordWeekendVaultSubmission,
   removeEpisodeFromPlaylist,
   saveHostOverride,
   savePlayerState,
+  setCatalogGuids,
   toggleFavoriteEpisode
 } from './storage.js';
 import {
   GroupGameService,
   formatTimeRemaining,
+  getQuestionRemainingMs,
   isRoomActive,
   normalizeCode
 } from './multiplayer.js';
@@ -72,6 +77,7 @@ const state = {
   activeQueueGuids: [],
   activeQueueIndex: -1,
   pickerTargetGuid: null,
+  dragFromTrackIdx: null,
 
   // Social Score Card state
   scoreCardContext: { episode: null, attempt: null },
@@ -79,18 +85,22 @@ const state = {
   // PWA Install Prompt
   deferredInstallPrompt: null,
 
-  // Group Game UI state
+  // Play with Friends (Custom Quiz) UI state
   groupService: new GroupGameService(),
   clientId: getOrCreateClientId(),
   selectedAvatarId: 'fox',
-  hostTopics: new Set(['ALL']),
+  hostQuickTopic: 'ALL',
   hostQuestionCount: 10,
-  hostPacing: 'live',
-  hostDuration: '1h',
+  hostSelectedGuids: [],
+  hostEpSearch: '',
+  hostEpCatFilter: 'ALL',
+  hostTimerSec: 20,
+  hostDuration: '1d',
   activeRoom: null,
   activeRole: null,
   lastRenderedHostKey: '',
   lastRenderedPlayerKey: '',
+  advancingQuestionLock: false,
 
   // Studio state
   editingGuid: null
@@ -101,6 +111,7 @@ let archivePlayer = null;
 let libraryPlayer = null;
 let playlistPlayer = null;
 let codeCheckTimeout = null;
+let liveCountdownTimer = null;
 
 function getOrCreateClientId() {
   const key = 'ffd_trivia_client_id';
@@ -203,7 +214,7 @@ function celebrateBadges(newlyUnlocked) {
 }
 
 // ============================================================================
-// INITIALIZATION & PWA REGISTRATION
+// INITIALIZATION & PWA ("SAVE TO YOUR PHONE") REGISTRATION
 // ============================================================================
 async function initApp() {
   state.selectedAvatarId = state.player.preferredAvatarId || 'fox';
@@ -223,6 +234,7 @@ async function initApp() {
   await Promise.all([loadCatalog(), state.groupService.init()]);
 
   initAudioPlayers();
+  initHostQuizSelectors();
   bindGlobalEvents();
   bindSoloEvents();
   bindEpisodesHubEvents();
@@ -241,32 +253,78 @@ async function initApp() {
   renderNewPlaylistIconPicker();
   renderPlaylistsView();
   renderAvatarPicker();
-  renderHostTopicSelector();
 
   handleUrlDeepLinks();
+}
+
+function isRunningStandalone() {
+  return (
+    Boolean(window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+    window.navigator.standalone === true
+  );
+}
+
+function syncInstallButtonsVisibility() {
+  const hide = isRunningStandalone();
+  document.getElementById('btn-install-app').hidden = hide;
+  document.getElementById('drawer-btn-install-app').hidden = hide;
 }
 
 function registerPwaSupport() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
+
+  syncInstallButtonsVisibility();
+
   window.addEventListener('beforeinstallprompt', (ev) => {
     ev.preventDefault();
     state.deferredInstallPrompt = ev;
     document.getElementById('native-pwa-install-wrap').hidden = false;
+    syncInstallButtonsVisibility();
   });
+
+  window.addEventListener('appinstalled', () => {
+    state.deferredInstallPrompt = null;
+    document.getElementById('install-app-modal').hidden = true;
+    syncInstallButtonsVisibility();
+    fireConfetti(60);
+    showToast('Fun Facts Daily is saved to your phone!', '📲');
+  });
+}
+
+async function handleSaveToPhoneClick() {
+  setFloatingDrawerOpen(false);
+
+  // True 1-tap native OS "Add to Home Screen / Install" prompt wherever supported (Android / Chrome / Edge)
+  if (state.deferredInstallPrompt) {
+    try {
+      state.deferredInstallPrompt.prompt();
+      const choice = await state.deferredInstallPrompt.userChoice;
+      if (choice?.outcome === 'accepted') {
+        state.deferredInstallPrompt = null;
+        document.getElementById('native-pwa-install-wrap').hidden = true;
+      }
+      return;
+    } catch {
+      // Fall through to helper modal if browser cancelled prompt
+    }
+  }
+
+  // Fallback for iOS/macOS Safari (Apple blocks JS from triggering Add to Home Screen directly)
+  document.getElementById('install-app-modal').hidden = false;
 }
 
 function handleUrlDeepLinks() {
   const params = new URLSearchParams(window.location.search);
 
-  // 1) Group Game QR link (?group=CODE)
-  const joinCode = params.get('group');
+  // 1) Play with Friends invite link (?group=CODE or ?join=CODE)
+  const joinCode = params.get('group') || params.get('join');
   if (joinCode) {
     switchMode('group');
     document.getElementById('join-code-input').value = normalizeCode(joinCode);
     document.getElementById('join-name-input').focus();
-    showToast(`Ready to join Room ${normalizeCode(joinCode)}! Pick your name & avatar.`, '🎉');
+    showToast(`Invite code ${normalizeCode(joinCode)} loaded! Enter your name to join.`, '🤝');
     return;
   }
 
@@ -314,6 +372,9 @@ async function loadCatalog() {
   for (const ep of state.episodes) {
     state.episodesByGuid.set(ep.guid, ep);
   }
+
+  // Register full episode GUID catalog so Completionist Club tracks all available questions dynamically
+  setCatalogGuids(state.episodes.map((ep) => ep.guid));
 }
 
 function initAudioPlayers() {
@@ -371,13 +432,20 @@ function initAudioPlayers() {
 }
 
 // ============================================================================
-// HEADER & 4-TAB NAVIGATION
+// HEADER, FLOATING MINI SCROLL BAR & 4-TAB NAVIGATION
 // ============================================================================
 function renderHeaderStats(bumpScore = false) {
-  document.getElementById('header-streak-val').textContent = String(state.player.currentStreak);
-  document.getElementById('header-score-val').textContent = state.player.totalPoints.toLocaleString();
+  const streakStr = String(state.player.currentStreak);
+  const scoreStr = state.player.totalPoints.toLocaleString();
   const unlockedCount = Object.keys(state.player.unlockedBadges || {}).length;
-  document.getElementById('header-badges-val').textContent = `${unlockedCount}/${BADGES.length}`;
+  const badgesStr = `${unlockedCount}/${BADGES.length}`;
+
+  document.getElementById('header-streak-val').textContent = streakStr;
+  document.getElementById('drawer-streak-val').textContent = streakStr;
+  document.getElementById('header-score-val').textContent = scoreStr;
+  document.getElementById('floating-score-val').textContent = scoreStr;
+  document.getElementById('header-badges-val').textContent = badgesStr;
+  document.getElementById('drawer-badges-val').textContent = badgesStr;
 
   const totalSavedItems = state.player.favoriteGuids.length + state.player.playlists.length;
   const navPlCount = document.getElementById('nav-playlist-count');
@@ -385,10 +453,33 @@ function renderHeaderStats(bumpScore = false) {
   navPlCount.hidden = totalSavedItems === 0;
 
   if (bumpScore) {
-    const pill = document.getElementById('score-pill');
-    pill.classList.remove('stat-bump');
-    void pill.offsetWidth;
-    pill.classList.add('stat-bump');
+    for (const id of ['score-pill', 'floating-score-pill']) {
+      const pill = document.getElementById(id);
+      if (!pill) continue;
+      pill.classList.remove('stat-bump');
+      void pill.offsetWidth;
+      pill.classList.add('stat-bump');
+    }
+  }
+}
+
+function setFloatingDrawerOpen(isOpen) {
+  const drawer = document.getElementById('floating-menu-drawer');
+  const toggleBtn = document.getElementById('btn-floating-menu-toggle');
+  drawer.hidden = !isOpen;
+  toggleBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function updateFloatingBarOnScroll() {
+  const headerEl = document.getElementById('site-header');
+  const floatingWrap = document.getElementById('floating-mini-wrap');
+  const headerBottom = headerEl.getBoundingClientRect().bottom;
+  const shouldShow = headerBottom < 14;
+
+  floatingWrap.classList.toggle('is-visible', shouldShow);
+  floatingWrap.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+  if (!shouldShow) {
+    setFloatingDrawerOpen(false);
   }
 }
 
@@ -398,9 +489,13 @@ function switchMode(targetMode) {
   document.body.dataset.mode = state.mode === 'group' ? 'group' : 'solo';
 
   for (const m of valid) {
-    document.getElementById(`btn-mode-${m}`)?.classList.toggle('is-active', state.mode === m);
-    document.getElementById(`${m}-view`).hidden = state.mode !== m;
+    const active = state.mode === m;
+    document.getElementById(`btn-mode-${m}`)?.classList.toggle('is-active', active);
+    document.getElementById(`drawer-mode-${m}`)?.classList.toggle('is-active', active);
+    document.getElementById(`${m}-view`).hidden = !active;
   }
+
+  setFloatingDrawerOpen(false);
 
   if (state.mode === 'episodes') {
     renderEpisodesCatalog();
@@ -411,7 +506,12 @@ function switchMode(targetMode) {
 
 function bindGlobalEvents() {
   document.querySelectorAll('[data-switch-mode]').forEach((btn) => {
-    btn.addEventListener('click', () => switchMode(btn.dataset.switchMode));
+    btn.addEventListener('click', () => {
+      switchMode(btn.dataset.switchMode);
+      if (window.scrollY > 220) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
   });
 
   document.getElementById('brand-home-link').addEventListener('click', (ev) => {
@@ -420,9 +520,46 @@ function bindGlobalEvents() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  document.getElementById('badges-pill').addEventListener('click', () => {
+  document.getElementById('floating-logo-btn').addEventListener('click', () => {
+    setFloatingDrawerOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  document.getElementById('btn-floating-menu-toggle').addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const drawer = document.getElementById('floating-menu-drawer');
+    setFloatingDrawerOpen(drawer.hidden);
+  });
+
+  document.addEventListener('click', (ev) => {
+    const wrap = document.getElementById('floating-mini-wrap');
+    const drawer = document.getElementById('floating-menu-drawer');
+    if (!drawer.hidden && !wrap.contains(ev.target)) {
+      setFloatingDrawerOpen(false);
+    }
+  });
+
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      setFloatingDrawerOpen(false);
+    }
+  });
+
+  window.addEventListener('scroll', updateFloatingBarOnScroll, { passive: true });
+  updateFloatingBarOnScroll();
+
+  const goToBadges = () => {
+    setFloatingDrawerOpen(false);
     switchMode('solo');
     document.getElementById('badges-section').scrollIntoView({ behavior: 'smooth' });
+  };
+  document.getElementById('badges-pill').addEventListener('click', goToBadges);
+  document.getElementById('drawer-badges-btn').addEventListener('click', goToBadges);
+
+  // Track Apple Podcasts follow clicks in footer icon row too
+  document.querySelector('.platform-icon--apple')?.addEventListener('click', () => {
+    const unlocked = markApplePodcastVisited(state.player);
+    celebrateBadges(unlocked);
   });
 }
 
@@ -624,12 +761,12 @@ function renderChoiceButtons({ container, options, attempt, correctIndex, onSele
 // MORE TO EXPLORE — RANDOMIZED ARCHIVE ENGINE
 // ============================================================================
 function getUnseenArchivePool(categoryId = state.archiveCategory) {
-  const seenSet = new Set(state.player.seenArchiveGuids);
+  const answeredSet = getAnsweredGuidsSet(state.player);
   const dailyGuid = state.episodes[0]?.guid;
 
   return state.episodes.filter((ep) => {
     if (ep.guid === dailyGuid) return false;
-    if (seenSet.has(ep.guid)) return false;
+    if (answeredSet.has(ep.guid)) return false;
     if (categoryId !== 'ALL' && ep.category !== categoryId) return false;
     return true;
   });
@@ -639,9 +776,9 @@ function renderCategoryFilterBar() {
   const bar = document.getElementById('archive-category-bar');
   bar.innerHTML = '';
 
-  const totalArchiveCount = Math.max(0, state.episodes.length - 1);
-  const seenCount = state.player.seenArchiveGuids.length;
-  document.getElementById('explore-progress-count').textContent = `${seenCount} / ${totalArchiveCount}`;
+  const meta = getBadgeMeta(state.player);
+  document.getElementById('explore-progress-count').textContent =
+    `${meta.answeredCount} / ${state.episodes.length}`;
 
   for (const cat of CATEGORIES) {
     const unseenCount = getUnseenArchivePool(cat.id).length;
@@ -834,6 +971,7 @@ function bindSoloEvents() {
     }
     renderHeaderStats(res.correct);
     renderDailySection();
+    renderCategoryFilterBar();
     renderBadgesBoard();
     celebrateBadges(res.newlyUnlocked);
   });
@@ -915,7 +1053,7 @@ function bindSoloEvents() {
 }
 
 // ============================================================================
-// TAB 2: EPISODES SEARCH & DISCOVERY HUB
+// TAB 2: EPISODES SEARCH & RANDOM FACT GENERATOR
 // ============================================================================
 function getFilteredEpisodes() {
   const q = state.epSearchQuery.toLowerCase().trim();
@@ -1105,14 +1243,18 @@ function bindEpisodesHubEvents() {
 
   document.getElementById('btn-surprise-episode').addEventListener('click', () => {
     if (!state.episodes.length) return;
-    const rand = state.episodes[Math.floor(Math.random() * state.episodes.length)];
+    let pool = state.episodes;
+    if (pool.length > 1 && libraryPlayer?.episode) {
+      pool = pool.filter((e) => e.guid !== libraryPlayer.episode.guid);
+    }
+    const rand = pool[Math.floor(Math.random() * pool.length)];
     libraryPlayer.loadEpisode(rand, { cueSeconds: 0, autoPlay: true });
-    showToast(`Now playing surprise episode: ${rand.title}`, '🎲');
+    showToast(`Random Fact Generator: Playing "${rand.title}"!`, '🎲');
   });
 }
 
 // ============================================================================
-// TAB 3: FAVORITES & CUSTOM PLAYLISTS
+// TAB 3: FAVORITES & DRAGGABLE CUSTOM PLAYLISTS
 // ============================================================================
 function renderNewPlaylistIconPicker() {
   const row = document.getElementById('new-playlist-icons');
@@ -1148,6 +1290,128 @@ function getActiveCollection() {
   return getActiveCollection();
 }
 
+function reorderCollectionTrack(active, fromIdx, toIdx) {
+  if (fromIdx === toIdx || fromIdx < 0 || toIdx < 0) return;
+  if (active.isBuiltIn) {
+    moveFavoriteEpisode(state.player, fromIdx, toIdx);
+  } else {
+    moveEpisodeInPlaylist(state.player, active.id, fromIdx, toIdx);
+  }
+
+  // Keep active playback queue aligned if currently playing this collection
+  if (state.activeQueueGuids.length > 0) {
+    const refreshed = getActiveCollection();
+    state.activeQueueGuids = refreshed.guids.filter((g) => state.episodesByGuid.has(g));
+    if (playlistPlayer.episode) {
+      state.activeQueueIndex = state.activeQueueGuids.indexOf(playlistPlayer.episode.guid);
+    }
+  }
+
+  renderPlaylistsView();
+}
+
+function wirePlaylistDragAndDrop(tracksEl, active) {
+  const rows = Array.from(tracksEl.querySelectorAll('.pl-track-row'));
+  if (rows.length < 2) return;
+
+  const clearDropClasses = () => {
+    rows.forEach((r) => r.classList.remove('is-drop-before', 'is-drop-after', 'is-dragging'));
+  };
+
+  // 1) Desktop HTML5 Drag & Drop
+  rows.forEach((row) => {
+    const idx = Number(row.dataset.trackIdx);
+
+    row.addEventListener('dragstart', (ev) => {
+      state.dragFromTrackIdx = idx;
+      row.classList.add('is-dragging');
+      if (ev.dataTransfer) {
+        ev.dataTransfer.effectAllowed = 'move';
+        ev.dataTransfer.setData('text/plain', String(idx));
+      }
+    });
+
+    row.addEventListener('dragover', (ev) => {
+      if (state.dragFromTrackIdx === null || state.dragFromTrackIdx === idx) return;
+      ev.preventDefault();
+      const rect = row.getBoundingClientRect();
+      const after = ev.clientY > rect.top + rect.height / 2;
+      rows.forEach((r) => r.classList.remove('is-drop-before', 'is-drop-after'));
+      row.classList.add(after ? 'is-drop-after' : 'is-drop-before');
+    });
+
+    row.addEventListener('dragleave', () => {
+      row.classList.remove('is-drop-before', 'is-drop-after');
+    });
+
+    row.addEventListener('drop', (ev) => {
+      ev.preventDefault();
+      const fromIdx = state.dragFromTrackIdx;
+      state.dragFromTrackIdx = null;
+      if (fromIdx === null || fromIdx === idx) {
+        clearDropClasses();
+        return;
+      }
+      const rect = row.getBoundingClientRect();
+      const dropAfter = ev.clientY > rect.top + rect.height / 2;
+      let toIdx = dropAfter ? idx + 1 : idx;
+      if (fromIdx < toIdx) toIdx -= 1;
+      clearDropClasses();
+      reorderCollectionTrack(active, fromIdx, toIdx);
+    });
+
+    row.addEventListener('dragend', () => {
+      state.dragFromTrackIdx = null;
+      clearDropClasses();
+    });
+
+    // 2) Touch / Pointer Drag on the ⠿ Grip Handle (smooth on phones & tablets!)
+    const handle = row.querySelector('.pl-drag-handle');
+    if (handle) {
+      let pointerActive = false;
+      let targetIdx = idx;
+
+      handle.addEventListener('pointerdown', (ev) => {
+        if (ev.pointerType === 'mouse') return; // Desktop mouse uses native HTML5 drag
+        ev.preventDefault();
+        pointerActive = true;
+        targetIdx = idx;
+        handle.setPointerCapture(ev.pointerId);
+        row.classList.add('is-dragging');
+      });
+
+      handle.addEventListener('pointermove', (ev) => {
+        if (!pointerActive) return;
+        rows.forEach((r) => r.classList.remove('is-drop-before', 'is-drop-after'));
+        for (const candidate of rows) {
+          const cIdx = Number(candidate.dataset.trackIdx);
+          if (cIdx === idx) continue;
+          const rect = candidate.getBoundingClientRect();
+          if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+            const after = ev.clientY > rect.top + rect.height / 2;
+            candidate.classList.add(after ? 'is-drop-after' : 'is-drop-before');
+            targetIdx = after ? cIdx + 1 : cIdx;
+            if (idx < targetIdx) targetIdx -= 1;
+            break;
+          }
+        }
+      });
+
+      const finishPointerDrag = () => {
+        if (!pointerActive) return;
+        pointerActive = false;
+        clearDropClasses();
+        if (targetIdx !== idx) {
+          reorderCollectionTrack(active, idx, targetIdx);
+        }
+      };
+
+      handle.addEventListener('pointerup', finishPointerDrag);
+      handle.addEventListener('pointercancel', finishPointerDrag);
+    }
+  });
+}
+
 function renderPlaylistsView() {
   const listEl = document.getElementById('playlist-selector-list');
   const active = getActiveCollection();
@@ -1180,7 +1444,6 @@ function renderPlaylistsView() {
     });
   });
 
-  // Render Right Stage
   const tracks = active.guids.map((g) => state.episodesByGuid.get(g)).filter(Boolean);
   const totalMins = Math.round(tracks.reduce((sum, ep) => sum + (ep.durationSec || 900), 0) / 60);
 
@@ -1207,6 +1470,7 @@ function renderPlaylistsView() {
   `;
 
   document.getElementById('playlist-player-box').hidden = tracks.length === 0 && !playlistPlayer.episode;
+  document.getElementById('playlist-drag-hint').hidden = tracks.length < 2;
 
   const tracksEl = document.getElementById('playlist-tracks-list');
   if (tracks.length === 0) {
@@ -1217,7 +1481,7 @@ function renderPlaylistsView() {
         <p>Browse the <strong>🔎 Episodes</strong> tab, tap ❤️ on any player, or click a <strong>1-Click Starter Pack</strong> on the left to fill it up.</p>
         <div class="reveal-actions" style="justify-content:center">
           <button type="button" class="primary-cta-btn" id="btn-jump-browse-eps">
-            🔎 Browse 404 Episodes →
+            🔎 Browse ${state.episodes.length} Episodes →
           </button>
         </div>
       </div>
@@ -1237,8 +1501,9 @@ function renderPlaylistsView() {
         const mins = Math.max(1, Math.round((ep.durationSec || 900) / 60));
         const isCurrent = playlistPlayer.episode?.guid === ep.guid;
         return `
-          <div class="pl-track-row ${isCurrent ? 'is-playing-track' : ''}">
+          <div class="pl-track-row ${isCurrent ? 'is-playing-track' : ''}" draggable="true" data-track-idx="${idx}">
             <div class="pl-track-left">
+              <span class="pl-drag-handle" title="Drag to reorder" aria-label="Drag episode to reorder">⠿</span>
               <span class="pl-track-num">${idx + 1}.</span>
               <img class="pl-track-thumb" src="${escapeHtml(ep.artworkUrl)}" alt="" loading="lazy" />
               <div class="pl-track-info">
@@ -1248,16 +1513,6 @@ function renderPlaylistsView() {
             </div>
             <div class="pl-track-controls">
               <button type="button" class="ep-mini-btn ep-mini-btn--play" data-pl-play-idx="${idx}">▶ Play</button>
-              ${
-                !active.isBuiltIn && idx > 0
-                  ? `<button type="button" class="ep-mini-btn" data-pl-up="${idx}" title="Move up">↑</button>`
-                  : ''
-              }
-              ${
-                !active.isBuiltIn && idx < tracks.length - 1
-                  ? `<button type="button" class="ep-mini-btn" data-pl-down="${idx}" title="Move down">↓</button>`
-                  : ''
-              }
               <button type="button" class="ep-mini-btn" data-pl-remove="${escapeHtml(ep.guid)}" title="Remove">✕</button>
             </div>
           </div>
@@ -1265,25 +1520,11 @@ function renderPlaylistsView() {
       })
       .join('');
 
+    wirePlaylistDragAndDrop(tracksEl, active);
+
     tracksEl.querySelectorAll('[data-pl-play-idx]').forEach((btn) => {
       btn.addEventListener('click', () => {
         startPlaylistPlayback(active, Number(btn.dataset.plPlayIdx));
-      });
-    });
-
-    tracksEl.querySelectorAll('[data-pl-up]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const i = Number(btn.dataset.plUp);
-        moveEpisodeInPlaylist(state.player, active.id, i, i - 1);
-        renderPlaylistsView();
-      });
-    });
-
-    tracksEl.querySelectorAll('[data-pl-down]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const i = Number(btn.dataset.plDown);
-        moveEpisodeInPlaylist(state.player, active.id, i, i + 1);
-        renderPlaylistsView();
       });
     });
 
@@ -1467,19 +1708,21 @@ function openScoreCardModal({ episode = null, attempt = null } = {}) {
 }
 
 // ============================================================================
-// BADGE BOARD RENDERER
+// BADGE BOARD RENDERER (17 BADGES INCLUDING 2K–5K & COMPLETIONIST CLUB)
 // ============================================================================
 function renderBadgesBoard() {
   const grid = document.getElementById('badges-grid');
   grid.innerHTML = '';
 
+  const meta = getBadgeMeta(state.player);
   let unlockedTotal = 0;
+
   for (const b of BADGES) {
     const unlockedIso = state.player.unlockedBadges[b.id];
     const isUnlocked = Boolean(unlockedIso);
     if (isUnlocked) unlockedTotal++;
 
-    const [cur, target] = b.progress(state.player);
+    const [cur, target] = b.progress(state.player, meta);
     const pct = Math.min(100, Math.round((cur / target) * 100));
 
     const card = document.createElement('div');
@@ -1490,7 +1733,7 @@ function renderBadgesBoard() {
         <div>
           <h3 class="badge-title">${escapeHtml(b.title)}</h3>
           <span class="badge-status-chip">
-            ${isUnlocked ? '✓ Unlocked!' : `Progress: ${cur} / ${target}`}
+            ${isUnlocked ? '✓ Unlocked!' : `Progress: ${cur.toLocaleString()} / ${target.toLocaleString()}`}
           </span>
         </div>
       </div>
@@ -1506,7 +1749,7 @@ function renderBadgesBoard() {
 }
 
 // ============================================================================
-// GROUP GAME MODE (HOST + PLAYER + QR + UNIQUE EXPIRING CODES)
+// TAB 4: PLAY WITH FRIENDS (CUSTOM QUIZZES, QUICK PICK, TIMERS, PAUSE & TOP 3)
 // ============================================================================
 function showGroupScreen(screenName) {
   const ids = {
@@ -1545,41 +1788,125 @@ function renderAvatarPicker() {
   }
 }
 
-function getHostMatchingEpisodes() {
-  if (state.hostTopics.has('ALL')) return state.episodes;
-  return state.episodes.filter((ep) => state.hostTopics.has(ep.category));
+function initHostQuizSelectors() {
+  const topicOptionsHtml = CATEGORIES.map(
+    (c) => `<option value="${escapeHtml(c.id)}">${c.icon} ${escapeHtml(c.id === 'ALL' ? 'All Topics (Give me everything!)' : c.label)}</option>`
+  ).join('');
+
+  document.getElementById('host-quick-topic').innerHTML = topicOptionsHtml;
+  document.getElementById('host-ep-cat-filter').innerHTML = topicOptionsHtml;
+  updateQuickPickButtonLabel();
 }
 
-function renderHostTopicSelector() {
-  const container = document.getElementById('host-topics-grid');
-  container.innerHTML = '';
+function updateQuickPickButtonLabel() {
+  const btn = document.getElementById('btn-apply-quick-pick');
+  const topicLabel =
+    state.hostQuickTopic === 'ALL' ? '' : ` ${state.hostQuickTopic}`;
+  btn.textContent = `⚡ Auto-Populate ${state.hostQuestionCount}${topicLabel} Questions`;
+}
 
-  for (const cat of CATEGORIES) {
-    const active = state.hostTopics.has(cat.id);
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = `cat-filter-btn ${active ? 'is-active' : ''}`;
-    btn.innerHTML = `<span>${cat.icon}</span><span>${escapeHtml(cat.id === 'ALL' ? 'All Topics' : cat.label)}</span>`;
-    btn.addEventListener('click', () => {
-      if (cat.id === 'ALL') {
-        state.hostTopics = new Set(['ALL']);
-      } else {
-        state.hostTopics.delete('ALL');
-        if (state.hostTopics.has(cat.id)) {
-          state.hostTopics.delete(cat.id);
-        } else {
-          state.hostTopics.add(cat.id);
-        }
-        if (state.hostTopics.size === 0) {
-          state.hostTopics.add('ALL');
-        }
-      }
-      renderHostTopicSelector();
-    });
-    container.appendChild(btn);
+function applyHostQuickPick(showFeedback = false) {
+  const pool =
+    state.hostQuickTopic === 'ALL'
+      ? [...state.episodes]
+      : state.episodes.filter((ep) => ep.category === state.hostQuickTopic);
+
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
   }
 
-  document.getElementById('host-pool-count').textContent = String(getHostMatchingEpisodes().length);
+  state.hostSelectedGuids = pool.slice(0, Math.min(state.hostQuestionCount, pool.length)).map((ep) => ep.guid);
+  renderHostSelectedRoster();
+  renderHostEpisodePicker();
+
+  if (showFeedback) {
+    const topicName = state.hostQuickTopic === 'ALL' ? 'mixed-topic' : state.hostQuickTopic;
+    showToast(`Populated ${state.hostSelectedGuids.length} ${topicName} questions!`, '⚡');
+  }
+}
+
+function renderHostSelectedRoster() {
+  document.getElementById('host-selected-count').textContent = String(state.hostSelectedGuids.length);
+  const chipsEl = document.getElementById('host-selected-chips');
+
+  if (state.hostSelectedGuids.length === 0) {
+    chipsEl.innerHTML = `<span style="font-size:0.84rem;color:var(--ink-muted);font-weight:700">No episodes selected yet — click ⚡ Auto-Populate on the left or check episodes from the list!</span>`;
+    return;
+  }
+
+  chipsEl.innerHTML = state.hostSelectedGuids
+    .map((guid, idx) => {
+      const ep = state.episodesByGuid.get(guid);
+      if (!ep) return '';
+      return `
+        <span class="selected-ep-chip">
+          <span>${idx + 1}. ${escapeHtml(ep.title)}</span>
+          <button type="button" data-remove-host-guid="${escapeHtml(guid)}" aria-label="Remove ${escapeHtml(ep.title)}">✕</button>
+        </span>
+      `;
+    })
+    .join('');
+
+  chipsEl.querySelectorAll('[data-remove-host-guid]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.removeHostGuid;
+      state.hostSelectedGuids = state.hostSelectedGuids.filter((g) => g !== target);
+      renderHostSelectedRoster();
+      renderHostEpisodePicker();
+    });
+  });
+}
+
+function renderHostEpisodePicker() {
+  const listEl = document.getElementById('host-episode-picker-list');
+  const q = state.hostEpSearch.toLowerCase().trim();
+  const selectedSet = new Set(state.hostSelectedGuids);
+
+  const filtered = state.episodes.filter((ep) => {
+    if (state.hostEpCatFilter !== 'ALL' && ep.category !== state.hostEpCatFilter) return false;
+    if (q) {
+      const hay = `${ep.title} ${ep.category} ${ep.question}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const visible = filtered.slice(0, 80);
+  if (visible.length === 0) {
+    listEl.innerHTML = `<div style="padding:16px;text-align:center;color:var(--ink-muted);font-weight:700">No episodes match that search.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = visible
+    .map((ep) => {
+      const checked = selectedSet.has(ep.guid);
+      return `
+        <label class="ep-pick-row ${checked ? 'is-checked' : ''}">
+          <input type="checkbox" data-pick-ep-guid="${escapeHtml(ep.guid)}" ${checked ? 'checked' : ''} />
+          <div class="ep-pick-body">
+            <div class="ep-pick-title">${escapeHtml(ep.title)} <span style="color:var(--ink-muted);font-weight:700">• ${escapeHtml(ep.category)}</span></div>
+            <div class="ep-pick-question">${escapeHtml(ep.question)}</div>
+          </div>
+        </label>
+      `;
+    })
+    .join('');
+
+  listEl.querySelectorAll('[data-pick-ep-guid]').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      const guid = cb.dataset.pickEpGuid;
+      if (cb.checked) {
+        if (!state.hostSelectedGuids.includes(guid)) {
+          state.hostSelectedGuids.push(guid);
+        }
+      } else {
+        state.hostSelectedGuids = state.hostSelectedGuids.filter((g) => g !== guid);
+      }
+      cb.closest('.ep-pick-row')?.classList.toggle('is-checked', cb.checked);
+      renderHostSelectedRoster();
+    });
+  });
 }
 
 async function refreshHostCodeValidation() {
@@ -1592,7 +1919,7 @@ async function refreshHostCodeValidation() {
 
   if (!normalized) {
     statusEl.className = 'code-validation-status';
-    statusEl.textContent = 'Enter a custom 4–8 character code or generate a random 6-character code.';
+    statusEl.textContent = 'Enter a 4–8 character code or generate a random 6-character code.';
     launchBtn.disabled = true;
     return;
   }
@@ -1600,11 +1927,11 @@ async function refreshHostCodeValidation() {
   const check = await state.groupService.checkCodeAvailability(normalized);
   if (check.available) {
     statusEl.className = 'code-validation-status is-ok';
-    statusEl.textContent = `✓ Code "${check.code}" is unique and ready to reserve!`;
+    statusEl.textContent = `✓ Invite code "${check.code}" is available!`;
     launchBtn.disabled = false;
   } else {
     statusEl.className = 'code-validation-status is-taken';
-    statusEl.innerHTML = `⚠️ ${escapeHtml(check.reason)} Suggested unique code: <button type="button" class="chip-link-btn" id="btn-use-suggested-code">${escapeHtml(check.suggestedCode)}</button>`;
+    statusEl.innerHTML = `⚠️ ${escapeHtml(check.reason)} Suggested code: <button type="button" class="chip-link-btn" id="btn-use-suggested-code">${escapeHtml(check.suggestedCode)}</button>`;
     launchBtn.disabled = true;
     document.getElementById('btn-use-suggested-code')?.addEventListener('click', () => {
       input.value = check.suggestedCode;
@@ -1616,6 +1943,12 @@ async function refreshHostCodeValidation() {
 function bindGroupEvents() {
   document.getElementById('btn-go-host-setup').addEventListener('click', async () => {
     showGroupScreen('setup');
+    if (state.hostSelectedGuids.length === 0) {
+      applyHostQuickPick(false);
+    } else {
+      renderHostSelectedRoster();
+      renderHostEpisodePicker();
+    }
     const codeInput = document.getElementById('host-code-input');
     if (!codeInput.value) {
       codeInput.value = await state.groupService.generateUniqueCode();
@@ -1627,20 +1960,46 @@ function bindGroupEvents() {
     btn.addEventListener('click', () => showGroupScreen('entry'));
   });
 
+  document.getElementById('host-quick-topic').addEventListener('change', (ev) => {
+    state.hostQuickTopic = ev.target.value;
+    updateQuickPickButtonLabel();
+  });
+
   document.querySelectorAll('#host-qcount-pills [data-qcount]').forEach((btn) => {
     btn.addEventListener('click', () => {
       state.hostQuestionCount = Number(btn.dataset.qcount);
       document.querySelectorAll('#host-qcount-pills .seg-pill').forEach((b) => b.classList.remove('is-active'));
       btn.classList.add('is-active');
+      updateQuickPickButtonLabel();
+      applyHostQuickPick(true);
     });
   });
 
-  document.querySelectorAll('#host-pacing-cards [data-pacing]').forEach((btn) => {
+  document.getElementById('btn-apply-quick-pick').addEventListener('click', () => {
+    applyHostQuickPick(true);
+  });
+
+  document.getElementById('host-ep-search').addEventListener('input', (ev) => {
+    state.hostEpSearch = ev.target.value;
+    renderHostEpisodePicker();
+  });
+
+  document.getElementById('host-ep-cat-filter').addEventListener('change', (ev) => {
+    state.hostEpCatFilter = ev.target.value;
+    renderHostEpisodePicker();
+  });
+
+  document.getElementById('btn-clear-host-questions').addEventListener('click', () => {
+    state.hostSelectedGuids = [];
+    renderHostSelectedRoster();
+    renderHostEpisodePicker();
+  });
+
+  document.querySelectorAll('#host-timer-pills [data-timer-sec]').forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.hostPacing = btn.dataset.pacing;
-      document.querySelectorAll('#host-pacing-cards .pacing-option').forEach((b) => b.classList.remove('is-active'));
+      state.hostTimerSec = Number(btn.dataset.timerSec);
+      document.querySelectorAll('#host-timer-pills .seg-pill').forEach((b) => b.classList.remove('is-active'));
       btn.classList.add('is-active');
-      document.getElementById('host-speed-timer-wrap').hidden = state.hostPacing !== 'live';
     });
   });
 
@@ -1667,36 +2026,31 @@ function bindGroupEvents() {
     const errEl = document.getElementById('host-create-error');
     errEl.hidden = true;
 
-    const pool = [...getHostMatchingEpisodes()];
-    if (pool.length === 0) {
-      errEl.textContent = 'Please select at least one topic with questions.';
+    if (state.hostSelectedGuids.length === 0) {
+      errEl.textContent = 'Please select at least 1 question (use Quick Pick or check episodes on the left).';
       errEl.hidden = false;
       return;
     }
 
-    for (let i = pool.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pool[i], pool[j]] = [pool[j], pool[i]];
-    }
-    const chosenGuids = pool.slice(0, Math.min(state.hostQuestionCount, pool.length)).map((e) => e.guid);
+    const quizTitle = document.getElementById('host-quiz-name').value.trim() || 'Fun Facts Showdown';
 
     try {
       const room = await state.groupService.createRoom({
         code: document.getElementById('host-code-input').value,
+        quizTitle,
         hostId: state.clientId,
-        pacingMode: state.hostPacing,
         durationId: state.hostDuration,
-        categories: Array.from(state.hostTopics),
-        questionGuids: chosenGuids,
-        speedTimer: document.getElementById('host-speed-timer').checked
+        questionGuids: [...state.hostSelectedGuids],
+        timePerQuestionSec: state.hostTimerSec
       });
 
       const unlocked = markGroupGamePlayed(state.player);
       celebrateBadges(unlocked);
 
       enterHostRoom(room);
+      showToast(`Created "${room.quizTitle}"! Share code ${room.code} or scan the QR code.`, '💌');
     } catch (err) {
-      errEl.textContent = err.message || 'Could not create game room.';
+      errEl.textContent = err.message || 'Could not create quiz room.';
       errEl.hidden = false;
       if (err.suggestedCode) {
         refreshHostCodeValidation();
@@ -1729,7 +2083,7 @@ function bindGroupEvents() {
 
       enterPlayerRoom(room);
     } catch (err) {
-      errEl.textContent = err.message || 'Could not join game.';
+      errEl.textContent = err.message || 'Could not join quiz.';
       errEl.hidden = false;
     }
   });
@@ -1739,7 +2093,7 @@ function bindGroupEvents() {
     const url = state.groupService.getJoinUrl(state.activeRoom.code);
     try {
       await navigator.clipboard.writeText(url);
-      showToast('Copied player join link to clipboard!', '🔗');
+      showToast('Copied invite link to clipboard!', '🔗');
     } catch {
       showToast(url, '🔗');
     }
@@ -1756,7 +2110,7 @@ function bindGroupEvents() {
       await state.groupService.closeRoom({ code: state.activeRoom.code, hostId: state.clientId });
     }
     leaveGroupRoom();
-    showToast('Game room closed. That code is now free for future games!', '👋');
+    showToast('Quiz ended. That invite code is now free for future games!', '👋');
   });
 
   document.getElementById('btn-leave-player-room').addEventListener('click', () => {
@@ -1764,12 +2118,57 @@ function bindGroupEvents() {
   });
 }
 
+function startLiveCountdownTicker() {
+  stopLiveCountdownTicker();
+  liveCountdownTimer = setInterval(() => {
+    const room = state.activeRoom;
+    if (!room || room.phase !== 'question') return;
+
+    const totalMs = Math.max(1000, (Number(room.timePerQuestionSec) || 20) * 1000);
+    const remMs = getQuestionRemainingMs(room);
+    const remSec = Math.max(0, Math.ceil(remMs / 1000));
+    const pct = Math.max(0, Math.min(100, (remMs / totalMs) * 100));
+
+    document.querySelectorAll('[data-live-timer-pill]').forEach((el) => {
+      el.textContent = room.paused ? `⏸ Paused (${remSec}s)` : `⏱ ${remSec}s`;
+      el.classList.toggle('is-urgent', !room.paused && remSec <= 5);
+    });
+    document.querySelectorAll('[data-live-timer-fill]').forEach((el) => {
+      el.style.width = `${pct}%`;
+    });
+
+    // Automatically advance from live question to Top 3 Leaderboard when time runs out
+    if (state.activeRole === 'host' && !room.paused && remMs <= 0 && !state.advancingQuestionLock) {
+      state.advancingQuestionLock = true;
+      state.groupService
+        .updateHostPhase({ code: room.code, hostId: state.clientId, phase: 'reveal' })
+        .then((updated) => {
+          state.activeRoom = updated;
+          state.advancingQuestionLock = false;
+          renderHostRoom(updated);
+        })
+        .catch(() => {
+          state.advancingQuestionLock = false;
+        });
+    }
+  }, 150);
+}
+
+function stopLiveCountdownTicker() {
+  if (liveCountdownTimer) {
+    clearInterval(liveCountdownTimer);
+    liveCountdownTimer = null;
+  }
+}
+
 function leaveGroupRoom() {
+  stopLiveCountdownTicker();
   state.groupService.unsubscribe();
   state.activeRoom = null;
   state.activeRole = null;
   state.lastRenderedHostKey = '';
   state.lastRenderedPlayerKey = '';
+  state.advancingQuestionLock = false;
   showGroupScreen('entry');
 }
 
@@ -1777,7 +2176,9 @@ function enterHostRoom(room) {
   state.activeRoom = room;
   state.activeRole = 'host';
   state.lastRenderedHostKey = '';
+  state.advancingQuestionLock = false;
   showGroupScreen('hostRoom');
+  startLiveCountdownTicker();
   renderHostRoom(room);
 
   state.groupService.subscribe(room.code, (updated) => {
@@ -1787,11 +2188,51 @@ function enterHostRoom(room) {
 }
 
 function getSortedPlayers(room) {
-  return Object.values(room.players || {}).sort((a, b) => (b.score || 0) - (a.score || 0));
+  return Object.values(room.players || {}).sort((a, b) => {
+    const scoreDiff = (b.score || 0) - (a.score || 0);
+    if (scoreDiff !== 0) return scoreDiff;
+    const correctDiff = (b.correctCount || 0) - (a.correctCount || 0);
+    if (correctDiff !== 0) return correctDiff;
+    return (a.joinedAt || 0) - (b.joinedAt || 0);
+  });
 }
 
 function getAvatarObj(avatarId) {
   return AVATARS.find((a) => a.id === avatarId) || AVATARS[0];
+}
+
+function renderTimerBarHtml(room) {
+  const totalMs = Math.max(1000, (Number(room.timePerQuestionSec) || 20) * 1000);
+  const remMs = getQuestionRemainingMs(room);
+  const remSec = Math.max(0, Math.ceil(remMs / 1000));
+  const pct = Math.max(0, Math.min(100, (remMs / totalMs) * 100));
+  return `
+    <div class="live-timer-row">
+      <span class="live-timer-pill ${!room.paused && remSec <= 5 ? 'is-urgent' : ''}" data-live-timer-pill>
+        ${room.paused ? `⏸ Paused (${remSec}s)` : `⏱ ${remSec}s`}
+      </span>
+      <div class="live-timer-track" aria-hidden="true">
+        <div class="live-timer-fill" data-live-timer-fill style="width:${pct}%"></div>
+      </div>
+    </div>
+    ${room.paused ? '<div class="paused-banner">⏸ Game Paused by Quiz Creator — Timer Frozen!</div>' : ''}
+  `;
+}
+
+function renderQuestionSpeedBonusesHtml(players, qIdx) {
+  const qKey = String(qIdx);
+  const firstWinner = players.find((p) => p.answers?.[qKey]?.speedRank === 1);
+  const secondWinner = players.find((p) => p.answers?.[qKey]?.speedRank === 2);
+  if (!firstWinner && !secondWinner) return '';
+
+  const badges = [];
+  if (firstWinner) {
+    badges.push(`<span class="speed-bonus-pill">🥇 1st Correct (+5 bonus): ${escapeHtml(firstWinner.name)}</span>`);
+  }
+  if (secondWinner) {
+    badges.push(`<span class="speed-bonus-pill">🥈 2nd Correct (+2 bonus): ${escapeHtml(secondWinner.name)}</span>`);
+  }
+  return `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">${badges.join('')}</div>`;
 }
 
 function renderHostRoom(room) {
@@ -1800,14 +2241,45 @@ function renderHostRoom(room) {
 
   if (!isRoomActive(room)) {
     leaveGroupRoom();
-    showToast('Game code expired.', '⏱️');
+    showToast('Invite code expired.', '⏱️');
     return;
   }
 
   const players = getSortedPlayers(room);
   const qIdx = room.currentQuestionIndex || 0;
-  const answeredCount = players.filter((p) => Boolean(p.answers?.[qIdx])).length;
-  const renderKey = `${room.phase}:${qIdx}:${players.length}:${answeredCount}:${players.map((p) => `${p.id}:${p.score}`).join(',')}`;
+  const qKey = String(qIdx);
+  const answeredCount = players.filter((p) => Boolean(p.answers?.[qKey] || p.answers?.[qIdx])).length;
+
+  // Auto-advance immediately when every joined player has answered (if at least 1 player joined)
+  if (
+    room.phase === 'question' &&
+    !room.paused &&
+    players.length > 0 &&
+    answeredCount === players.length &&
+    !state.advancingQuestionLock
+  ) {
+    state.advancingQuestionLock = true;
+    state.groupService
+      .updateHostPhase({ code: room.code, hostId: state.clientId, phase: 'reveal' })
+      .then((r) => {
+        state.activeRoom = r;
+        state.advancingQuestionLock = false;
+        renderHostRoom(r);
+      })
+      .catch(() => {
+        state.advancingQuestionLock = false;
+      });
+    return;
+  }
+
+  const renderKey = [
+    room.phase,
+    qIdx,
+    room.paused ? '1' : '0',
+    players.length,
+    answeredCount,
+    players.map((p) => `${p.id}:${p.score}`).join(',')
+  ].join(':');
   if (renderKey === state.lastRenderedHostKey) return;
   state.lastRenderedHostKey = renderKey;
 
@@ -1815,71 +2287,56 @@ function renderHostRoom(room) {
   const joinUrl = state.groupService.getJoinUrl(room.code);
   const shapes = ['▲', '◆', '●', '■'];
 
-  if (room.pacingMode === 'live' && room.phase === 'question' && players.length > 0 && answeredCount === players.length) {
-    state.groupService
-      .updateHostPhase({ code: room.code, hostId: state.clientId, phase: 'reveal' })
-      .then((r) => {
-        state.activeRoom = r;
-        renderHostRoom(r);
-      });
-    return;
-  }
-
-  if (room.phase === 'lobby' || room.pacingMode === 'self_paced') {
+  if (room.phase === 'lobby') {
     const qrSvg = renderQrSvg(joinUrl);
-    const isSelfPaced = room.pacingMode === 'self_paced';
 
     mount.innerHTML = `
       <div class="lobby-grid">
         <div class="qr-box">
           <div class="qr-svg-holder">${qrSvg}</div>
-          <p class="qr-caption">Scan with phone or tablet camera to join immediately!</p>
+          <p class="qr-caption">Scan with any phone or tablet camera to join straight away!</p>
         </div>
 
         <div class="players-lobby-wrap">
           <div>
             <div class="section-eyebrow">
-              ${isSelfPaced ? '🏁 SELF-PACED CHALLENGE ROOM' : '📺 LIVE KAHOOT LOBBY'} • ${room.questionGuids.length} QUESTIONS
+              💌 INVITE FRIENDS • ${room.questionGuids.length} QUESTIONS • ${room.timePerQuestionSec || 20}S PER QUESTION
             </div>
             <h2 class="section-title" style="margin-bottom:4px">
-              ${isSelfPaced ? 'Leaderboard Live! Players Can Join Anytime' : `Players Joined (${players.length})`}
+              ${escapeHtml(room.quizTitle || 'Fun Facts Showdown')}
             </h2>
             <p class="section-subtitle">
-              Players can scan the QR code or enter code <strong>${escapeHtml(room.code)}</strong> in Group Game mode.
+              Friends can scan the QR code or enter invite code <strong>${escapeHtml(room.code)}</strong> under <strong>Play with Friends</strong>.
+              Players Joined: <strong>${players.length}</strong>
             </p>
           </div>
 
-          ${
-            isSelfPaced
-              ? renderScoreboardHtml(players, room.questionGuids.length, true)
-              : `
-                <div class="players-roster-grid">
-                  ${
-                    players.length === 0
-                      ? '<span style="color:var(--ink-muted);font-weight:700">Waiting for players to hop in… (Click "Open Player Window" above to test!)</span>'
-                      : players
-                          .map((p) => {
-                            const av = getAvatarObj(p.avatarId);
-                            return `<div class="player-chip">
-                              <span class="player-chip-avatar" style="background:${av.bg}">${av.emoji}</span>
-                              <span>${escapeHtml(p.name)}</span>
-                            </div>`;
-                          })
-                          .join('')
-                  }
-                </div>
-                <div class="reveal-actions">
-                  <button type="button" class="primary-cta-btn" id="btn-host-start-live">
-                    ▶ Start Question 1 of ${room.questionGuids.length}
-                  </button>
-                </div>
-              `
-          }
+          <div class="players-roster-grid">
+            ${
+              players.length === 0
+                ? '<span style="color:var(--ink-muted);font-weight:700">Waiting for friends to hop in… (Click "Open Test Player" above to preview on this screen!)</span>'
+                : players
+                    .map((p) => {
+                      const av = getAvatarObj(p.avatarId);
+                      return `<div class="player-chip">
+                        <span class="player-chip-avatar" style="background:${av.bg}">${av.emoji}</span>
+                        <span>${escapeHtml(p.name)}</span>
+                      </div>`;
+                    })
+                    .join('')
+            }
+          </div>
+
+          <div class="reveal-actions">
+            <button type="button" class="primary-cta-btn" id="btn-host-start-live">
+              ▶ Play Now
+            </button>
+          </div>
         </div>
       </div>
     `;
 
-    document.getElementById('btn-host-start-live')?.addEventListener('click', async () => {
+    document.getElementById('btn-host-start-live').addEventListener('click', async () => {
       const updated = await state.groupService.updateHostPhase({
         code: room.code,
         hostId: state.clientId,
@@ -1899,17 +2356,25 @@ function renderHostRoom(room) {
     mount.innerHTML = `
       <div>
         <div class="card-top-bar">
-          <span class="section-eyebrow">QUESTION ${qIdx + 1} OF ${room.questionGuids.length} • ${escapeHtml(ep.category)}</span>
-          <span class="pts-pill">${answeredCount} / ${players.length} Answered</span>
+          <span class="section-eyebrow">${escapeHtml(room.quizTitle || 'CUSTOM QUIZ')} • QUESTION ${qIdx + 1} OF ${room.questionGuids.length}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="pts-pill">${answeredCount} / ${players.length} Answered</span>
+            <button type="button" class="secondary-cta-btn" id="btn-host-pause-toggle" style="padding:6px 14px;font-size:0.88rem">
+              ${room.paused ? '▶ Resume Game' : '⏸ Pause Game'}
+            </button>
+          </div>
         </div>
+
+        ${renderTimerBarHtml(room)}
+
         <h2 class="trivia-question" style="font-size:clamp(1.5rem,2.6vw,2.1rem)">${escapeHtml(ep.question)}</h2>
 
-        <div class="kahoot-options-grid">
+        <div class="quiz-options-grid">
           ${ep.options
             .map(
               (opt, idx) => `
-              <div class="kahoot-tile kahoot-tile--${idx}">
-                <span class="kahoot-shape">${shapes[idx]}</span>
+              <div class="quiz-tile quiz-tile--${idx}">
+                <span class="quiz-shape">${shapes[idx]}</span>
                 <span>${escapeHtml(opt)}</span>
               </div>
             `
@@ -1918,12 +2383,21 @@ function renderHostRoom(room) {
         </div>
 
         <div class="reveal-actions reveal-actions--next">
-          <button type="button" class="primary-cta-btn" id="btn-host-reveal">
-            ✨ Reveal Correct Answer
+          <button type="button" class="chip-link-btn" id="btn-host-reveal">
+            ⏭ End Question &amp; Show Top 3 Now
           </button>
         </div>
       </div>
     `;
+
+    document.getElementById('btn-host-pause-toggle').addEventListener('click', async () => {
+      const updated = await state.groupService.togglePauseRoom({
+        code: room.code,
+        hostId: state.clientId
+      });
+      state.activeRoom = updated;
+      renderHostRoom(updated);
+    });
 
     document.getElementById('btn-host-reveal').addEventListener('click', async () => {
       const updated = await state.groupService.updateHostPhase({
@@ -1939,22 +2413,24 @@ function renderHostRoom(room) {
 
   if (room.phase === 'reveal') {
     const isLast = qIdx >= room.questionGuids.length - 1;
+    const topThree = players.slice(0, 3);
+
     mount.innerHTML = `
       <div>
         <div class="card-top-bar">
-          <span class="section-eyebrow">ANSWER REVEAL • QUESTION ${qIdx + 1} OF ${room.questionGuids.length}</span>
+          <span class="section-eyebrow">QUESTION ${qIdx + 1} OF ${room.questionGuids.length} RESULTS</span>
           <span class="category-tag">${escapeHtml(ep.title)}</span>
         </div>
         <h2 class="trivia-question">${escapeHtml(ep.question)}</h2>
 
-        <div class="kahoot-options-grid">
+        <div class="quiz-options-grid">
           ${ep.options
             .map((opt, idx) => {
-              const pickCount = players.filter((p) => p.answers?.[qIdx]?.selectedIndex === idx).length;
+              const pickCount = players.filter((p) => (p.answers?.[qKey] || p.answers?.[qIdx])?.selectedIndex === idx).length;
               const isRight = idx === ep.correctIndex;
               return `
-                <div class="kahoot-tile kahoot-tile--${idx} ${isRight ? 'is-winner' : 'is-dimmed'}">
-                  <span class="kahoot-shape">${isRight ? '✓' : shapes[idx]}</span>
+                <div class="quiz-tile quiz-tile--${idx} ${isRight ? 'is-winner' : 'is-dimmed'}">
+                  <span class="quiz-shape">${isRight ? '✓' : shapes[idx]}</span>
                   <span>${escapeHtml(opt)} <strong>(${pickCount})</strong></span>
                 </div>
               `;
@@ -1963,16 +2439,17 @@ function renderHostRoom(room) {
         </div>
 
         <div class="answer-reveal-box">
-          <p class="reveal-correct-line">✓ ${escapeHtml(ep.options[ep.correctIndex])}</p>
+          <p class="reveal-correct-line">✓ Correct Answer: ${escapeHtml(ep.options[ep.correctIndex])}</p>
           <p class="reveal-explanation">${escapeHtml(ep.explanation)}</p>
+          ${renderQuestionSpeedBonusesHtml(players, qIdx)}
         </div>
 
-        <h3 class="setup-step-title" style="margin-top:20px">🏅 Current Standings</h3>
-        ${renderScoreboardHtml(players, room.questionGuids.length, false)}
+        <h3 class="setup-step-title" style="margin-top:22px">🏅 Top 3 Players</h3>
+        ${renderScoreboardHtml(topThree, { mode: 'top3', totalPlayers: players.length })}
 
         <div class="reveal-actions reveal-actions--next">
           <button type="button" class="primary-cta-btn" id="btn-host-next-q">
-            ${isLast ? '🏆 Show Final Podium!' : `Next Question (${qIdx + 2}/${room.questionGuids.length}) →`}
+            ${isLast ? '🏆 See Final Rankings →' : 'Next Question →'}
           </button>
         </div>
       </div>
@@ -1996,14 +2473,15 @@ function renderHostRoom(room) {
     mount.innerHTML = `
       <div style="text-align:center">
         <div class="complete-emoji">🏆</div>
-        <h2 class="section-title">Final Group Game Podium!</h2>
+        <div class="section-eyebrow">FINAL QUIZ STANDINGS</div>
+        <h2 class="section-title">${escapeHtml(room.quizTitle || 'Fun Facts Showdown')}</h2>
         <p class="section-subtitle" style="margin:0 auto 20px">
-          Thanks for playing Fun Facts Daily Trivia together!
+          All players ranked from highest points to lowest points:
         </p>
-        ${renderScoreboardHtml(players, room.questionGuids.length, false)}
+        ${renderScoreboardHtml(players, { mode: 'full', totalQ: room.questionGuids.length })}
         <div class="reveal-actions" style="justify-content:center">
           <button type="button" class="primary-cta-btn" id="btn-host-new-game">
-            🎉 Set Up Another Game
+            🤝 Create Another Quiz
           </button>
         </div>
       </div>
@@ -2018,30 +2496,46 @@ function renderHostRoom(room) {
   }
 }
 
-function renderScoreboardHtml(players, totalQ, showProgress) {
-  if (!players.length) {
-    return `<div class="players-roster-grid"><span style="color:var(--ink-muted);font-weight:700">No players have joined yet—scan the QR code to hop in!</span></div>`;
+function renderScoreboardHtml(playersList, { mode = 'full', totalQ = 0, totalPlayers = 0 } = {}) {
+  if (!playersList.length) {
+    return `<div class="players-roster-grid"><span style="color:var(--ink-muted);font-weight:700">No player scores recorded yet!</span></div>`;
   }
   const medals = ['🥇', '🥈', '🥉'];
   return `
-    <div class="leaderboard-list">
-      ${players
+    <div class="leaderboard-list" style="text-align:left">
+      ${playersList
         .map((p, idx) => {
           const av = getAvatarObj(p.avatarId);
-          const doneCount = Object.keys(p.answers || {}).length;
+          const rowClass =
+            idx === 1 ? 'leaderboard-row--silver' : idx === 2 ? 'leaderboard-row--bronze' : '';
+          const detailBits = [];
+          if (mode === 'full' && totalQ > 0) {
+            detailBits.push(`${p.correctCount || 0}/${totalQ} correct`);
+          }
+          if (p.firstBonuses) detailBits.push(`🥇×${p.firstBonuses}`);
+          if (p.secondBonuses) detailBits.push(`🥈×${p.secondBonuses}`);
           return `
-            <div class="leaderboard-row">
-              <div style="display:flex;align-items:center;gap:10px">
-                <span>${medals[idx] || `#${idx + 1}`}</span>
+            <div class="leaderboard-row ${rowClass}">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <span style="min-width:28px">${medals[idx] || `#${idx + 1}`}</span>
                 <span class="player-chip-avatar" style="background:${av.bg}">${av.emoji}</span>
                 <span>${escapeHtml(p.name)}</span>
-                ${showProgress ? `<span style="font-size:0.8rem;color:var(--ink-muted)">(${doneCount}/${totalQ} answered)</span>` : ''}
+                ${
+                  detailBits.length
+                    ? `<span style="font-size:0.78rem;color:var(--ink-muted)">(${detailBits.join(' • ')})</span>`
+                    : ''
+                }
               </div>
               <span>${(p.score || 0).toLocaleString()} pts</span>
             </div>
           `;
         })
         .join('')}
+      ${
+        mode === 'top3' && totalPlayers > 3
+          ? `<div style="text-align:center;font-size:0.82rem;font-weight:700;color:var(--ink-muted);margin-top:4px">Showing Top 3 of ${totalPlayers} players — full rankings revealed at the end!</div>`
+          : ''
+      }
     </div>
   `;
 }
@@ -2051,6 +2545,7 @@ function enterPlayerRoom(room) {
   state.activeRole = 'player';
   state.lastRenderedPlayerKey = '';
   showGroupScreen('playerRoom');
+  startLiveCountdownTicker();
   renderPlayerRoom(room);
 
   state.groupService.subscribe(room.code, (updated) => {
@@ -2062,7 +2557,7 @@ function enterPlayerRoom(room) {
 function renderPlayerRoom(room) {
   if (!isRoomActive(room)) {
     leaveGroupRoom();
-    showToast('This game room has ended or expired.', '👋');
+    showToast('This quiz room has ended or expired.', '👋');
     return;
   }
 
@@ -2081,107 +2576,49 @@ function renderPlayerRoom(room) {
   document.getElementById('player-score-pill').textContent = `${me.score || 0} PTS`;
 
   const players = getSortedPlayers(room);
+  const qIdx = room.currentQuestionIndex || 0;
+  const qKey = String(qIdx);
+  const myAttempt = me.answers?.[qKey] || me.answers?.[qIdx];
   const myAnswerKeys = Object.keys(me.answers || {}).join(',');
-  const renderKey = `${room.phase}:${room.currentQuestionIndex}:${myAnswerKeys}:${players.map((p) => `${p.id}:${p.score}`).join(',')}`;
+
+  const renderKey = [
+    room.phase,
+    qIdx,
+    room.paused ? '1' : '0',
+    myAnswerKeys,
+    players.map((p) => `${p.id}:${p.score}`).join(',')
+  ].join(':');
   if (renderKey === state.lastRenderedPlayerKey) return;
   state.lastRenderedPlayerKey = renderKey;
 
   const mount = document.getElementById('player-stage-mount');
   const shapes = ['▲', '◆', '●', '■'];
 
-  if (room.pacingMode === 'self_paced') {
-    let nextIdx = 0;
-    while (nextIdx < room.questionGuids.length && me.answers?.[nextIdx]) {
-      nextIdx++;
-    }
-
-    if (nextIdx >= room.questionGuids.length) {
-      mount.innerHTML = `
-        <div style="text-align:center">
-          <div class="complete-emoji">🎉</div>
-          <h2 class="section-title">Challenge Complete!</h2>
-          <p class="section-subtitle" style="margin:0 auto 18px">
-            You scored <strong>${me.score} points</strong>! Here is the live room leaderboard:
-          </p>
-          ${renderScoreboardHtml(players, room.questionGuids.length, true)}
-        </div>
-      `;
-      return;
-    }
-
-    const ep = state.episodesByGuid.get(room.questionGuids[nextIdx]);
-    if (!ep) return;
-
-    mount.innerHTML = `
-      <div>
-        <div class="card-top-bar">
-          <span class="section-eyebrow">SELF-PACED QUESTION ${nextIdx + 1} OF ${room.questionGuids.length}</span>
-          <span class="category-tag">${escapeHtml(ep.category)}</span>
-        </div>
-        <h2 class="trivia-question">${escapeHtml(ep.question)}</h2>
-        <div class="kahoot-options-grid" id="player-self-options">
-          ${ep.options
-            .map(
-              (opt, idx) => `
-              <button type="button" class="kahoot-tile kahoot-tile--${idx}" data-pick="${idx}">
-                <span class="kahoot-shape">${shapes[idx]}</span>
-                <span>${escapeHtml(opt)}</span>
-              </button>
-            `
-            )
-            .join('')}
-        </div>
-      </div>
-    `;
-
-    mount.querySelectorAll('[data-pick]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const picked = Number(btn.dataset.pick);
-        const updated = await state.groupService.submitPlayerAnswer({
-          code: room.code,
-          playerId: state.clientId,
-          questionIndex: nextIdx,
-          selectedIndex: picked,
-          correctIndex: ep.correctIndex
-        });
-        if (picked === ep.correctIndex) {
-          fireConfetti(28);
-          showToast(`Correct! +${SHOW_CONFIG.points.groupBase} pts`, '🎯');
-        } else {
-          showToast(`Answer: ${ep.options[ep.correctIndex]}`, '💡');
-        }
-        state.activeRoom = updated;
-        renderPlayerRoom(updated);
-      });
-    });
-    return;
-  }
-
   if (room.phase === 'lobby') {
     mount.innerHTML = `
       <div style="text-align:center;padding:28px 10px">
         <div class="complete-emoji">${av.emoji}</div>
-        <h2 class="section-title">You’re In the Lobby, ${escapeHtml(me.name)}!</h2>
+        <div class="section-eyebrow">${escapeHtml(room.quizTitle || 'PLAY WITH FRIENDS')}</div>
+        <h2 class="section-title">You’re In, ${escapeHtml(me.name)}!</h2>
         <p class="section-subtitle" style="margin:0 auto">
-          Keep your eyes on the host’s screen — answer buttons will pop up right here as soon as Question 1 begins!
+          ${players.length} player${players.length === 1 ? '' : 's'} ready! Get set — Question 1 will appear right here as soon as the quiz creator hits <strong>Play Now</strong>!
         </p>
       </div>
     `;
     return;
   }
 
-  const qIdx = room.currentQuestionIndex || 0;
   const ep = state.episodesByGuid.get(room.questionGuids[qIdx]);
-  const myAttempt = me.answers?.[qIdx];
 
   if (room.phase === 'question' && ep) {
     if (myAttempt) {
       mount.innerHTML = `
-        <div style="text-align:center;padding:26px 10px">
+        <div style="text-align:center;padding:24px 10px">
+          ${renderTimerBarHtml(room)}
           <div class="complete-emoji">🔒</div>
           <h2 class="section-title">Answer Locked In!</h2>
           <p class="section-subtitle" style="margin:0 auto">
-            Waiting for the host to reveal the answer…
+            Hang tight while the timer finishes — the Top 3 leaderboard is coming right up!
           </p>
         </div>
       `;
@@ -2190,14 +2627,15 @@ function renderPlayerRoom(room) {
 
     mount.innerHTML = `
       <div>
-        <div class="section-eyebrow">QUESTION ${qIdx + 1} OF ${room.questionGuids.length} • TAP YOUR ANSWER!</div>
+        <div class="section-eyebrow">QUESTION ${qIdx + 1} OF ${room.questionGuids.length} • FASTEST CORRECT WINS BONUS POINTS!</div>
+        ${renderTimerBarHtml(room)}
         <h2 class="trivia-question">${escapeHtml(ep.question)}</h2>
-        <div class="kahoot-options-grid">
+        <div class="quiz-options-grid">
           ${ep.options
             .map(
               (opt, idx) => `
-              <button type="button" class="kahoot-tile kahoot-tile--${idx}" data-live-pick="${idx}">
-                <span class="kahoot-shape">${shapes[idx]}</span>
+              <button type="button" class="quiz-tile quiz-tile--${idx}" data-live-pick="${idx}" ${room.paused ? 'disabled' : ''}>
+                <span class="quiz-shape">${shapes[idx]}</span>
                 <span>${escapeHtml(opt)}</span>
               </button>
             `
@@ -2209,16 +2647,21 @@ function renderPlayerRoom(room) {
 
     mount.querySelectorAll('[data-live-pick]').forEach((btn) => {
       btn.addEventListener('click', async () => {
+        if (room.paused) return;
         const picked = Number(btn.dataset.livePick);
-        const updated = await state.groupService.submitPlayerAnswer({
-          code: room.code,
-          playerId: state.clientId,
-          questionIndex: qIdx,
-          selectedIndex: picked,
-          correctIndex: ep.correctIndex
-        });
-        state.activeRoom = updated;
-        renderPlayerRoom(updated);
+        try {
+          const updated = await state.groupService.submitPlayerAnswer({
+            code: room.code,
+            playerId: state.clientId,
+            questionIndex: qIdx,
+            selectedIndex: picked,
+            correctIndex: ep.correctIndex
+          });
+          state.activeRoom = updated;
+          renderPlayerRoom(updated);
+        } catch (err) {
+          showToast(err.message || 'Could not submit answer.', '⚠️');
+        }
       });
     });
     return;
@@ -2226,17 +2669,26 @@ function renderPlayerRoom(room) {
 
   if (room.phase === 'reveal' && ep) {
     const gotIt = Boolean(myAttempt?.correct);
+    const topThree = players.slice(0, 3);
+    let bonusNote = '';
+    if (gotIt && myAttempt.speedRank === 1) bonusNote = ' (10 + 5 First Correct Bonus! 🥇)';
+    else if (gotIt && myAttempt.speedRank === 2) bonusNote = ' (10 + 2 Second Correct Bonus! 🥈)';
+
     mount.innerHTML = `
       <div>
         <div class="answer-reveal-box" style="margin-top:0">
           <div class="reveal-banner ${gotIt ? 'reveal-banner--correct' : 'reveal-banner--wrong'}">
-            ${gotIt ? `🎉 Correct! +${myAttempt.points} pts` : myAttempt ? '💡 So Close!' : '⏰ Time’s Up!'}
+            ${gotIt ? `🎉 Correct! +${myAttempt.points} pts${bonusNote}` : myAttempt ? '💡 Good Guess!' : '⏰ Time’s Up!'}
           </div>
           <p class="reveal-correct-line">Correct Answer: ${escapeHtml(ep.options[ep.correctIndex])}</p>
           <p class="reveal-explanation">${escapeHtml(ep.explanation)}</p>
         </div>
-        <h3 class="setup-step-title" style="margin-top:18px">Live Standings</h3>
-        ${renderScoreboardHtml(players, room.questionGuids.length, false)}
+
+        <h3 class="setup-step-title" style="margin-top:18px">🏅 Top 3 Leaderboard</h3>
+        ${renderScoreboardHtml(topThree, { mode: 'top3', totalPlayers: players.length })}
+        <p class="setup-micro-note" style="text-align:center;margin-top:10px">
+          Waiting for the quiz creator to hit <strong>Next Question</strong>…
+        </p>
       </div>
     `;
     return;
@@ -2247,15 +2699,19 @@ function renderPlayerRoom(room) {
     mount.innerHTML = `
       <div style="text-align:center">
         <div class="complete-emoji">🏆</div>
+        <div class="section-eyebrow">${escapeHtml(room.quizTitle || 'FINAL RESULTS')}</div>
         <h2 class="section-title">You Finished #${myRank} with ${me.score} Points!</h2>
-        ${renderScoreboardHtml(players, room.questionGuids.length, false)}
+        <p class="section-subtitle" style="margin:0 auto 16px">
+          Final standings ranked from most points to least points:
+        </p>
+        ${renderScoreboardHtml(players, { mode: 'full', totalQ: room.questionGuids.length })}
       </div>
     `;
   }
 }
 
 // ============================================================================
-// MODALS: SCORE CARD, PLAYLIST PICKER, PWA INSTALL, SYNC & HOST STUDIO
+// MODALS: SCORE CARD, PLAYLIST PICKER, SAVE TO PHONE, SYNC & HOST STUDIO
 // ============================================================================
 function bindModalEvents() {
   const scorecardModal = document.getElementById('scorecard-modal');
@@ -2284,7 +2740,6 @@ function bindModalEvents() {
         });
         return;
       }
-      // Desktop fallback: copy PNG image directly to clipboard or download
       if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
         showToast('Copied score card image to clipboard! Paste it into any social post or chat.', '📸');
@@ -2339,10 +2794,9 @@ function bindModalEvents() {
     showToast(`Created "${pl.name}" and added episode!`, '🎧');
   });
 
-  // Install Mobile App Modal
-  document.getElementById('btn-install-app').addEventListener('click', () => {
-    installModal.hidden = false;
-  });
+  // Save to Your Phone (1-tap prompt where supported, clean Safari fallback otherwise)
+  document.getElementById('btn-install-app').addEventListener('click', handleSaveToPhoneClick);
+  document.getElementById('drawer-btn-install-app').addEventListener('click', handleSaveToPhoneClick);
 
   document.getElementById('btn-trigger-native-pwa').addEventListener('click', async () => {
     if (!state.deferredInstallPrompt) return;
@@ -2353,12 +2807,15 @@ function bindModalEvents() {
     installModal.hidden = true;
   });
 
-  // Sync Modal
-  document.getElementById('btn-open-sync').addEventListener('click', () => {
+  // Sync Modal (both header and floating drawer buttons)
+  const openSyncModal = () => {
+    setFloatingDrawerOpen(false);
     document.getElementById('sync-export-box').value = exportSyncCode(state.player);
     document.getElementById('sync-status-msg').hidden = true;
     syncModal.hidden = false;
-  });
+  };
+  document.getElementById('btn-open-sync').addEventListener('click', openSyncModal);
+  document.getElementById('drawer-btn-sync').addEventListener('click', openSyncModal);
 
   document.getElementById('btn-copy-sync-code').addEventListener('click', async () => {
     const val = document.getElementById('sync-export-box').value;
@@ -2374,6 +2831,7 @@ function bindModalEvents() {
     const msgEl = document.getElementById('sync-status-msg');
     try {
       state.player = importSyncCode(document.getElementById('sync-import-box').value);
+      evaluateNewBadges(state.player);
       heroPlayer.refreshFavoriteUi();
       renderHeaderStats(true);
       renderDailySection();
@@ -2390,17 +2848,20 @@ function bindModalEvents() {
     }
   });
 
-  // Host Studio
+  // Host Studio (both header and floating drawer buttons)
   const catSelect = document.getElementById('studio-q-category');
   catSelect.innerHTML = CATEGORIES.filter((c) => c.id !== 'ALL')
     .map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)}</option>`)
     .join('');
 
-  document.getElementById('btn-open-studio').addEventListener('click', () => {
+  const openStudioModal = () => {
+    setFloatingDrawerOpen(false);
     document.getElementById('studio-ep-count').textContent = String(state.episodes.length);
     renderStudioResults('');
     studioModal.hidden = false;
-  });
+  };
+  document.getElementById('btn-open-studio').addEventListener('click', openStudioModal);
+  document.getElementById('drawer-btn-studio').addEventListener('click', openStudioModal);
 
   document.getElementById('studio-search-input').addEventListener('input', (ev) => {
     renderStudioResults(ev.target.value);

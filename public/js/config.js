@@ -5,20 +5,23 @@ export const SHOW_CONFIG = {
   appleShowId: '1810507693',
   appleShowUrl: 'https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693',
   appleReviewUrl: 'https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693?action=write-review',
+  patreonUrl: 'https://www.patreon.com/cw/FunFactsDailyPod',
+  podlinkUrl: 'https://pod.link/1810507693',
   defaultArtwork:
     'https://megaphone.imgix.net/podcasts/fe3784ae-198b-11f0-91a3-0f6a7cb73d31/image/68ba595ba6ba941c972898366cb62e76.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress',
   points: {
     dailyDouble: 20,
     weekendVault: 15,
     archiveQuestion: 10,
-    groupBase: 100,
-    groupSpeedBonusMax: 50
+    friendsCorrectBase: 10,
+    friendsFirstBonus: 5,
+    friendsSecondBonus: 2
   }
 };
 
 /**
- * Optional $0/month Supabase Free Tier config for global Group Game multiplayer.
- * When left empty, Group Game automatically uses the local HTTP room API (for phones on Wi-Fi)
+ * Optional $0/month Supabase Free Tier config for global Play with Friends multiplayer.
+ * When left empty, Play with Friends automatically uses the local HTTP room API (for phones on Wi-Fi)
  * plus BroadcastChannel/localStorage sync across browser tabs!
  */
 export const CLOUD_CONFIG = {
@@ -103,6 +106,42 @@ export const BADGES = [
     progress: (s) => [Math.min(s.totalPoints, 1000), 1000]
   },
   {
+    id: 'pts_2000',
+    title: '2,000-Point Scholar',
+    icon: '🌟',
+    color: '#FFD166',
+    description: 'Score 2,000 cumulative trivia points across your sessions.',
+    check: (s) => s.totalPoints >= 2000,
+    progress: (s) => [Math.min(s.totalPoints, 2000), 2000]
+  },
+  {
+    id: 'pts_3000',
+    title: '3,000-Point Mastermind',
+    icon: '🚀',
+    color: '#06D6A0',
+    description: 'Score 3,000 cumulative trivia points across your sessions.',
+    check: (s) => s.totalPoints >= 3000,
+    progress: (s) => [Math.min(s.totalPoints, 3000), 3000]
+  },
+  {
+    id: 'pts_4000',
+    title: '4,000-Point Virtuoso',
+    icon: '💎',
+    color: '#48CAE4',
+    description: 'Score 4,000 cumulative trivia points across your sessions.',
+    check: (s) => s.totalPoints >= 4000,
+    progress: (s) => [Math.min(s.totalPoints, 4000), 4000]
+  },
+  {
+    id: 'pts_5000',
+    title: '5,000-Point Hall of Famer',
+    icon: '🏛️',
+    color: '#FF7A00',
+    description: 'Score 5,000 cumulative trivia points across your sessions.',
+    check: (s) => s.totalPoints >= 5000,
+    progress: (s) => [Math.min(s.totalPoints, 5000), 5000]
+  },
+  {
     id: 'archive_10',
     title: 'Vault Diver',
     icon: '🧭',
@@ -144,11 +183,28 @@ export const BADGES = [
   {
     id: 'party_starter',
     title: 'Party Starter',
-    icon: '🎉',
+    icon: '🤝',
     color: '#FF5C5C',
-    description: 'Host or join a multiplayer Group Game.',
+    description: 'Create or join a Play with Friends trivia game.',
     check: (s) => Boolean(s.groupGamePlayed),
     progress: (s) => [s.groupGamePlayed ? 1 : 0, 1]
+  },
+  {
+    id: 'completionist_club',
+    title: 'Completionist Club',
+    icon: '🎓',
+    color: '#FFD23F',
+    description: 'Answer every available episode trivia question in the catalog!',
+    check: (_s, meta) => {
+      const total = meta?.totalAvailable || 0;
+      const done = meta?.answeredCount || 0;
+      return total > 0 && done >= total;
+    },
+    progress: (_s, meta) => {
+      const total = Math.max(1, meta?.totalAvailable || 404);
+      const done = Math.min(total, meta?.answeredCount || 0);
+      return [done, total];
+    }
   }
 ];
 
@@ -167,7 +223,7 @@ export const AVATARS = [
   { id: 'penguin', emoji: '🐧', name: 'Cool Penguin', bg: '#72EFDD' }
 ];
 
-// Family-friendly check for SFW classroom/family Group Games
+// Family-friendly check for SFW classroom/family Play with Friends games
 const BLOCKED_PATTERNS = [
   /f+u+c+k/i,
   /s+h+i+t/i,
