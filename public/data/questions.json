@@ -1,5 +1,37 @@
 [
   {
+    "guid": "8ba0d37c-dbe6-11f1-aa26-0fea8a87be53",
+    "title": "Fun Facts About Squid",
+    "pubDate": "Mon, 09 Nov 2026 08:10:00 -0000",
+    "durationSec": 1006,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/8ba0d37c-dbe6-11f1-aa26-0fea8a87be53/image/3dcaa3a7440fb897860a69aca5eec1f5.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML6448341355.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-squid/id1810507693?i=1000800725792&uo=4",
+    "category": "Animals",
+    "cueSeconds": 145,
+    "question": "How many hearts does a squid possess to circulate blood through its body?",
+    "options": [
+      "One heart",
+      "Two hearts",
+      "Three hearts",
+      "Four hearts"
+    ],
+    "correctIndex": 2,
+    "explanation": "Squid have three distinct hearts! Two branchial hearts pump oxygen-poor blood through the gills, while a central systemic heart circulates oxygenated, copper-based blue blood throughout the body.",
+    "vaultBonus": {
+      "cueSeconds": 295,
+      "question": "What unusual organ surrounds a squid's esophagus, requiring it to swallow finely ground food?",
+      "options": [
+        "Its ring-shaped brain",
+        "Its ink reservoir",
+        "Its primary aorta",
+        "Its cartilage mantle"
+      ],
+      "correctIndex": 0,
+      "explanation": "A squid's brain is donut- or ring-shaped and encircles its esophagus! Because food passes directly through the center of its brain, a squid uses its chitinous beak and radula to grind meals into tiny pieces to prevent neurological injury."
+    }
+  },
+  {
     "guid": "798bc976-d989-11f1-8ebc-13f919e63447",
     "title": "Fun Facts About Kid Inventors",
     "pubDate": "Fri, 06 Nov 2026 08:10:00 -0000",
