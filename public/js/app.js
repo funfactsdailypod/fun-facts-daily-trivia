@@ -359,6 +359,108 @@ function handleUrlDeepLinks() {
   }
 }
 
+async function checkLiveRssFeed(latestKnownGuid) {
+  if (typeof DOMParser === 'undefined') return null;
+  try {
+    const res = await fetch(SHOW_CONFIG.rssFeedUrl, { cache: 'no-cache' });
+    if (!res.ok) return null;
+    const xmlText = await res.text();
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+    const items = xmlDoc.querySelectorAll('item');
+    if (!items || items.length === 0) return null;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const title = item.querySelector('title')?.textContent?.trim() || '';
+      const epType = item.querySelector('episodeType, itunes\\:episodeType')?.textContent?.trim()?.toLowerCase() || '';
+      if (epType === 'trailer' || epType === 'bonus' || /^(You Might Also Like|Introducing|Preview|Trailer)/i.test(title)) {
+        continue;
+      }
+      const guid = item.querySelector('guid')?.textContent?.trim() || '';
+      if (!guid || guid === latestKnownGuid) {
+        return null; // Catalog already contains the latest episode
+      }
+
+      const pubDate = item.querySelector('pubDate')?.textContent?.trim() || new Date().toUTCString();
+      const durationSec = parseInt(item.querySelector('duration, itunes\\:duration')?.textContent || '900', 10) || 900;
+      const rawImg = item.querySelector('image, itunes\\:image')?.getAttribute('href') || '';
+      const artworkUrl = rawImg ? rawImg.replace('max-w=3000&max-h=3000', 'max-w=600&max-h=600') : SHOW_CONFIG.defaultArtwork;
+      const audioUrl = item.querySelector('enclosure')?.getAttribute('url') || '';
+      const rawDesc = item.querySelector('description')?.textContent || '';
+      const cleanDesc = rawDesc
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/\s*Listen Ad-Free on Patreon.*$/i, '')
+        .trim();
+
+      const sentences = cleanDesc
+        .split(/(?<=[.?!])\s+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 25 && !/patreon|airwave|megaphone|who arted/i.test(s));
+
+      const topic = title.replace(/^Fun Facts About (the )?/i, '').trim();
+      const firstFact = sentences[0] || `${topic} features fascinating details.`;
+      const secondFact = sentences[1] || sentences[0] || `There is much more to discover about ${topic}.`;
+
+      let category = 'History';
+      const text = `${title} ${cleanDesc}`.toLowerCase();
+      if (/animal|creature|species|squid|shark|horse|dog|cat|bird|whale|insect|reptile|mammal|dinosaur|mollusk/i.test(text)) {
+        category = 'Animals';
+      } else if (/food|cooking|pizza|chocolate|cheese|coffee|tea|recipe|fruit|bread/i.test(text)) {
+        category = 'Foods';
+      } else if (/art|painting|artist|sculpture|museum|drawing|color|gallery/i.test(text)) {
+        category = 'Art';
+      } else if (/science|biology|physics|chemistry|space|planet|galaxy|atom|dna|cell|light/i.test(text)) {
+        category = 'Science';
+      } else if (/geography|river|mountain|country|ocean|island|city|continent|capital/i.test(text)) {
+        category = 'Geography';
+      } else if (/movie|tv|song|music|hollywood|game|film|actor|pop/i.test(text)) {
+        category = 'Pop Culture';
+      } else if (/inventor|president|leader|biography|born|life of|scientist/i.test(text)) {
+        category = 'Biographies';
+      }
+
+      return {
+        guid,
+        title,
+        pubDate,
+        durationSec,
+        artworkUrl,
+        audioUrl,
+        appleUrl: SHOW_CONFIG.appleShowUrl,
+        category,
+        cueSeconds: 140,
+        question: `In this Fun Facts Daily episode about ${topic}, which of the following is true?`,
+        options: [
+          firstFact.length > 95 ? firstFact.slice(0, 92) + '...' : firstFact,
+          'It was completely disproved by twentieth-century scientific surveys.',
+          'It was accidentally discovered during an Antarctic expedition in 1845.',
+          'It only occurs during polar winter seasons.'
+        ],
+        correctIndex: 0,
+        explanation: `${sentences.slice(0, 2).join(' ')} Listen to the episode player to hear Kyle explain!`,
+        vaultBonus: {
+          cueSeconds: 280,
+          question: `What additional standout detail is shared about ${topic}?`,
+          options: [
+            secondFact.length > 95 ? secondFact.slice(0, 92) + '...' : secondFact,
+            'It requires temperatures below freezing to survive.',
+            'It violates the second law of thermodynamics.',
+            'It was officially prohibited in medieval European territories.'
+          ],
+          correctIndex: 0,
+          explanation: `${secondFact} Check out the episode audio player to explore more!`
+        }
+      };
+    }
+  } catch {
+    // Non-blocking fallback
+  }
+  return null;
+}
+
 async function loadCatalog() {
   const res = await fetch('./data/questions.json', { cache: 'no-cache' });
   const rawList = await res.json();
@@ -368,6 +470,18 @@ async function loadCatalog() {
     const patch = overrides[ep.guid];
     return patch ? { ...ep, ...patch } : ep;
   });
+
+  // Dynamic live check: if Megaphone has published a new episode that is not yet committed in questions.json,
+  // fetch and mount it instantly so today's episode is never missed!
+  try {
+    const liveEp = await checkLiveRssFeed(state.episodes[0]?.guid);
+    if (liveEp && !state.episodes.some((e) => e.guid === liveEp.guid)) {
+      state.episodes.unshift(liveEp);
+    }
+  } catch {
+    // Non-blocking
+  }
+
   state.episodesByGuid.clear();
   for (const ep of state.episodes) {
     state.episodesByGuid.set(ep.guid, ep);
