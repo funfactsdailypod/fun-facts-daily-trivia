@@ -71,75 +71,236 @@ body {
   min-height: 100vh;
   font-family: var(--font-body);
   color: var(--ink);
-  background-color: var(--bg-canvas);
-  background-image:
-    radial-gradient(circle at 12% 10%, var(--bg-glow) 0%, transparent 42%),
-    radial-gradient(circle at 88% 22%, rgba(255, 122, 0, 0.16) 0%, transparent 36%),
-    radial-gradient(var(--ink) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 28px 28px;
-  background-position: 0 0, 0 0, -1px -1px;
-  background-blend-mode: normal;
-  transition: background-color 0.35s ease;
+  background-color: #f8f9fa;
+  background-image: url('../icons/wallpaper-bg.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 100% 100%;
+  background-attachment: fixed;
   overflow-x: hidden;
 }
 
-/* Soften polka-dot pattern subtly */
-body::before {
-  content: '';
+/* Fixed 100%-Stretched Non-Tiled Wallpaper Layer (Guarantees fixed stretch on iOS Safari & mobile too) */
+.wallpaper-fixed-bg {
   position: fixed;
   inset: 0;
-  background: var(--bg-canvas);
-  opacity: 0.87;
-  z-index: -2;
+  width: 100vw;
+  height: 100vh;
+  background-image: url('../icons/wallpaper-bg.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 100% 100%;
+  z-index: 0;
   pointer-events: none;
-  transition: background-color 0.35s ease;
 }
 
-/* Memphis Decorative Floating Shapes */
+/* Translucent Drifting Shapes Layer (Floats Over Wallpaper, Under Site Windows) */
 .memphis-bg {
   position: fixed;
   inset: 0;
-  z-index: -1;
+  z-index: 1;
   pointer-events: none;
   overflow: hidden;
 }
 
-.m-shape {
+.drift-shape {
   position: absolute;
-  opacity: 0.7;
+  display: block;
+  pointer-events: none;
+  will-change: transform;
+  backdrop-filter: blur(1px);
 }
 
-.m-shape--squiggle {
-  top: 96px;
-  left: -24px;
-  width: 170px;
-  color: var(--brand-orange);
-  transform: rotate(-14deg);
+/* 1: Large translucent warm yellow circle */
+.drift-shape--1 {
+  width: 180px;
+  height: 180px;
+  top: 8%;
+  left: 6%;
+  border-radius: 50%;
+  background: rgba(255, 210, 63, 0.30);
+  border: 3px solid rgba(255, 190, 11, 0.42);
+  animation: driftPathA 28s ease-in-out infinite alternate;
 }
 
-.m-shape--triangle {
-  top: 150px;
-  right: 2.5%;
-  width: 74px;
-  color: var(--brand-yellow);
-  transform: rotate(16deg);
+/* 2: Medium translucent cyan rounded diamond */
+.drift-shape--2 {
+  width: 115px;
+  height: 115px;
+  top: 16%;
+  right: 11%;
+  border-radius: 26px;
+  background: rgba(0, 187, 249, 0.25);
+  border: 3px solid rgba(0, 150, 214, 0.36);
+  transform: rotate(28deg);
+  animation: driftPathB 34s ease-in-out infinite alternate;
 }
 
-.m-shape--donut {
-  bottom: 8%;
-  left: 2.5%;
-  width: 82px;
-  color: var(--accent-pop);
+/* 3: Small translucent hot-pink ring / donut */
+.drift-shape--3 {
+  width: 72px;
+  height: 72px;
+  top: 38%;
+  left: 3.5%;
+  border-radius: 50%;
+  background: rgba(255, 77, 141, 0.14);
+  border: 14px solid rgba(255, 77, 141, 0.30);
+  animation: driftPathC 24s ease-in-out infinite alternate;
 }
 
-.m-shape--dots {
+/* 4: Extra-large translucent orange-coral soft capsule */
+.drift-shape--4 {
+  width: 210px;
+  height: 96px;
+  top: 52%;
+  right: 4%;
+  border-radius: 999px;
+  background: rgba(255, 122, 0, 0.22);
+  border: 3px solid rgba(255, 122, 0, 0.34);
+  transform: rotate(-18deg);
+  animation: driftPathD 38s ease-in-out infinite alternate;
+}
+
+/* 5: Medium translucent mint-teal circle */
+.drift-shape--5 {
+  width: 130px;
+  height: 130px;
   bottom: 14%;
-  right: 2%;
-  width: 110px;
-  height: 110px;
-  background-image: radial-gradient(var(--brand-orange) 3px, transparent 3px);
-  background-size: 18px 18px;
-  transform: rotate(10deg);
+  left: 14%;
+  border-radius: 50%;
+  background: rgba(0, 191, 166, 0.24);
+  border: 3px solid rgba(0, 191, 166, 0.36);
+  animation: driftPathB 31s ease-in-out infinite alternate-reverse;
+}
+
+/* 6: Small translucent violet rounded square */
+.drift-shape--6 {
+  width: 64px;
+  height: 64px;
+  top: 24%;
+  left: 44%;
+  border-radius: 18px;
+  background: rgba(155, 93, 229, 0.22);
+  border: 2.5px solid rgba(155, 93, 229, 0.35);
+  animation: driftPathA 26s ease-in-out infinite alternate-reverse;
+}
+
+/* 7: Large translucent magenta ring */
+.drift-shape--7 {
+  width: 155px;
+  height: 155px;
+  bottom: 8%;
+  right: 18%;
+  border-radius: 50%;
+  background: rgba(255, 77, 109, 0.12);
+  border: 18px solid rgba(255, 77, 109, 0.24);
+  animation: driftPathC 36s ease-in-out infinite alternate;
+}
+
+/* 8: Tiny translucent sunny gold pill */
+.drift-shape--8 {
+  width: 92px;
+  height: 44px;
+  top: 68%;
+  left: 36%;
+  border-radius: 999px;
+  background: rgba(255, 210, 63, 0.32);
+  border: 2.5px solid rgba(255, 175, 0, 0.42);
+  animation: driftPathD 22s ease-in-out infinite alternate;
+}
+
+/* 9: Medium translucent sky-blue triangle (clip-path) */
+.drift-shape--9 {
+  width: 105px;
+  height: 95px;
+  top: 11%;
+  left: 68%;
+  background: rgba(58, 134, 255, 0.24);
+  clip-path: polygon(50% 6%, 95% 92%, 5% 92%);
+  animation: driftPathA 33s ease-in-out infinite alternate;
+}
+
+/* 10: Small translucent coral-orange circle */
+.drift-shape--10 {
+  width: 54px;
+  height: 54px;
+  top: 46%;
+  left: 78%;
+  border-radius: 50%;
+  background: rgba(255, 122, 0, 0.28);
+  border: 2.5px solid rgba(255, 88, 0, 0.36);
+  animation: driftPathC 21s ease-in-out infinite alternate-reverse;
+}
+
+/* 11: Large translucent turquoise rounded diamond */
+.drift-shape--11 {
+  width: 140px;
+  height: 140px;
+  top: 74%;
+  left: 62%;
+  border-radius: 34px;
+  background: rgba(46, 196, 182, 0.20);
+  border: 3px solid rgba(46, 196, 182, 0.32);
+  animation: driftPathB 40s ease-in-out infinite alternate;
+}
+
+/* 12: Medium translucent yellow-orange triangle */
+.drift-shape--12 {
+  width: 88px;
+  height: 80px;
+  bottom: 28%;
+  left: 22%;
+  background: rgba(255, 159, 28, 0.26);
+  clip-path: polygon(50% 8%, 94% 90%, 6% 90%);
+  animation: driftPathD 29s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes driftPathA {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(65px, 42px, 0) rotate(22deg) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-45px, 85px, 0) rotate(-18deg) scale(0.95);
+  }
+}
+
+@keyframes driftPathB {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(18deg) scale(1);
+  }
+  50% {
+    transform: translate3d(-75px, 55px, 0) rotate(-16deg) scale(1.08);
+  }
+  100% {
+    transform: translate3d(48px, -60px, 0) rotate(36deg) scale(0.94);
+  }
+}
+
+@keyframes driftPathC {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(52px, -64px, 0) rotate(40deg) scale(1.1);
+  }
+  100% {
+    transform: translate3d(-58px, -28px, 0) rotate(-25deg) scale(0.92);
+  }
+}
+
+@keyframes driftPathD {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-12deg) scale(1);
+  }
+  50% {
+    transform: translate3d(-60px, -48px, 0) rotate(14deg) scale(1.05);
+  }
+  100% {
+    transform: translate3d(70px, 38px, 0) rotate(-28deg) scale(0.96);
+  }
 }
 
 /* Confetti Overlay */
@@ -596,6 +757,8 @@ body[data-mode='group'] .mode-btn.is-active {
    ========================================================================== */
 
 .page-container {
+  position: relative;
+  z-index: 10;
   max-width: 1260px;
   margin: 0 auto;
   padding: 28px 20px 60px;
@@ -2197,9 +2360,26 @@ body[data-mode='group'] .mode-btn.is-active {
 }
 
 .site-footer {
+  position: relative;
+  z-index: 10;
   border-top: var(--border-thick);
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
   padding: 32px 20px 22px;
+}
+
+.footer-cta-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+.footer-save-phone-btn {
+  padding: 10px 18px;
+  font-size: 0.92rem;
 }
 
 .footer-platform-section {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ffd-companion-v4';
+const CACHE_NAME = 'ffd-companion-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const APP_SHELL = [
   './icons/logo-512.png',
   './icons/apple-touch-icon.png',
   './icons/favicon-64.png',
+  './icons/wallpaper-bg.png',
   './manifest.webmanifest'
 ];
 

@@ -1,5 +1,133 @@
 [
   {
+    "guid": "2663de16-df09-11f1-8635-9ff15a42c34c",
+    "title": "Fun Facts About Batteries",
+    "pubDate": "Fri, 13 Nov 2026 08:10:00 -0000",
+    "durationSec": 1121,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/2663de16-df09-11f1-8635-9ff15a42c34c/image/d1c375c6076c63702e78b335648b521b.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML9077081560.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-batteries/id1810507693?i=1000801688503&uo=4",
+    "category": "Science",
+    "cueSeconds": 780,
+    "question": "When you drop a standard alkaline battery onto a hard surface, what happens if the battery is depleted compared to a fresh one?",
+    "options": [
+      "It lands flat with a heavy, silent thud",
+      "It bounces noticeably because zinc oxidizes into a rigid solid inside",
+      "It spins toward its negative anode terminal",
+      "It loses its magnetic polarity immediately"
+    ],
+    "correctIndex": 1,
+    "explanation": "A fresh alkaline battery contains a gel-like zinc paste that absorbs impact and lands with a dull thud. As the battery discharges, that zinc converts into solid, spring-like zinc oxide—causing a dead battery to bounce when dropped!",
+    "vaultBonus": {
+      "cueSeconds": 195,
+      "question": "Who coined the electrical term \"battery\" in 1749—decades before Alessandro Volta built the first continuous-current voltaic pile in 1800?",
+      "options": [
+        "Luigi Galvani",
+        "Michael Faraday",
+        "Benjamin Franklin",
+        "James Watt"
+      ],
+      "correctIndex": 2,
+      "explanation": "Benjamin Franklin coined the term \"battery\" in 1749 to describe a linked set of Leyden jars discharging together like a military battery of cannons. Strictly speaking, single AA and AAA units are single electrochemical cells, whereas a 9-volt battery links six 1.5-volt cells together!"
+    }
+  },
+  {
+    "guid": "c83a09dc-de31-11f1-935a-8b7369e0b947",
+    "title": "Fun Facts About Email",
+    "pubDate": "Thu, 12 Nov 2026 08:10:00 -0000",
+    "durationSec": 1088,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/c83a09dc-de31-11f1-935a-8b7369e0b947/image/7b8be90cb529f3362fe503346644ec77.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML8894014096.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-email/id1810507693?i=1000801397499&uo=4",
+    "category": "Science",
+    "cueSeconds": 240,
+    "question": "When computer engineer Ray Tomlinson created networked ARPANET email in late 1971, why did he choose the \"@\" symbol for email addresses?",
+    "options": [
+      "It was the only punctuation key wired into ARPANET routers",
+      "It designated that a user was located \"at\" a specific host computer",
+      "It stood for \"Automated Transmission\" in military telegraphy",
+      "It triggered high-speed encryption on mainframe terminals"
+    ],
+    "correctIndex": 1,
+    "explanation": "Ray Tomlinson needed a character on his Model 33 Teletype keyboard that never appeared in people's names and naturally separated the user from their host machine. Reading simply as \"user at host,\" his 1971 choice of the @ symbol became an enduring icon of digital communication.",
+    "vaultBonus": {
+      "cueSeconds": 585,
+      "question": "In August 1991, astronauts aboard which NASA spacecraft sent the first electronic mail message from outer space using AppleLink software?",
+      "options": [
+        "Space Shuttle Atlantis",
+        "Skylab 4",
+        "Apollo-Soyuz Test Project",
+        "Space Shuttle Endeavour"
+      ],
+      "correctIndex": 0,
+      "explanation": "Crew members aboard the Space Shuttle Atlantis (STS-43) used a Macintosh Portable computer running AppleLink software in August 1991 to send the first-ever email from orbit back to Earth!"
+    }
+  },
+  {
+    "guid": "f0489d16-dd74-11f1-a3d7-17365336b88f",
+    "title": "Fun Facts About Robert Smalls",
+    "pubDate": "Wed, 11 Nov 2026 08:10:00 -0000",
+    "durationSec": 1071,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/f0489d16-dd74-11f1-a3d7-17365336b88f/image/3d4520b2cbefe7f57b1415df7b6e3bd6.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML3558762292.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-robert-smalls/id1810507693?i=1000801167785&uo=4",
+    "category": "Biographies",
+    "cueSeconds": 210,
+    "question": "In May 1862, 23-year-old enslaved wheelman Robert Smalls sailed his family and crew to freedom past five Confederate checkpoints in Charleston Harbor aboard which steamer?",
+    "options": [
+      "CSS Virginia",
+      "USS Monitor",
+      "CSS Planter",
+      "CSS Shenandoah"
+    ],
+    "correctIndex": 2,
+    "explanation": "Disguising himself in the captain's wide-brimmed straw hat and sounding the exact whistle signals at every harbor fort including Fort Sumter, Robert Smalls piloted the Confederate transport steamer CSS Planter to the Union blockade—and was later appointed captain of the ship!",
+    "vaultBonus": {
+      "cueSeconds": 650,
+      "question": "As a delegate to South Carolina's 1868 Constitutional Convention during Reconstruction, Robert Smalls authored the resolution creating what historic statewide institution?",
+      "options": [
+        "South Carolina's first free, compulsory public school system",
+        "The Charleston Maritime Navigation Academy",
+        "The first trans-state telegraph network",
+        "The Port Royal Freedmen's Bank and Mint"
+      ],
+      "correctIndex": 0,
+      "explanation": "Although legally barred from learning to read as an enslaved youth, Smalls mastered literacy as an adult and championed public education—authoring the 1868 resolution that established South Carolina's first free, compulsory public school system before serving five terms in Congress."
+    }
+  },
+  {
+    "guid": "60e6d496-dcb4-11f1-a6ef-a339681d88a8",
+    "title": "Fun Facts About Toast",
+    "pubDate": "Tue, 10 Nov 2026 08:10:00 -0000",
+    "durationSec": 908,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/60e6d496-dcb4-11f1-a6ef-a339681d88a8/image/294ed9594319b277846b66089e6ad86e.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML7320917416.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-toast/id1810507693?i=1000800955034&uo=4",
+    "category": "Foods",
+    "cueSeconds": 155,
+    "question": "Which chemical process—discovered by a French physician in 1912—rearranges amino acids and simple sugars between 280°F and 330°F to give toast its golden-brown crust and aroma?",
+    "options": [
+      "The Pasteur fermentation cycle",
+      "The Maillard reaction",
+      "Alkaline hydrolysis",
+      "Starch sublimation"
+    ],
+    "correctIndex": 1,
+    "explanation": "Named after French physician Louis-Camille Maillard, the Maillard reaction occurs when heat triggers amino acids and simple sugars to form Amadori compounds and savory aroma molecules that give toasted bread, roasted coffee, and seared foods their signature flavor.",
+    "vaultBonus": {
+      "cueSeconds": 540,
+      "question": "According to physicist Robert Matthews' famous study on why dropped toast so often lands butter-side down, what is the main reason for the flip?",
+      "options": [
+        "The weight of butter makes the top side aerodynamically heavier",
+        "Standard kitchen table heights only allow time for a single half-rotation",
+        "Warm air rising from the toast creates an inverted air pocket",
+        "Toasting shifts the slice's center of gravity toward the crust"
+      ],
+      "correctIndex": 1,
+      "explanation": "A thin layer of butter barely affects the slice's aerodynamics! Instead, as toast tips off a standard 30-inch table edge, rotational torque gives the falling slice just enough time to complete half a turn before hitting the floor."
+    }
+  },
+  {
     "guid": "8ba0d37c-dbe6-11f1-aa26-0fea8a87be53",
     "title": "Fun Facts About Squid",
     "pubDate": "Mon, 09 Nov 2026 08:10:00 -0000",

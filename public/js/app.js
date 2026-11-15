@@ -359,6 +359,47 @@ function handleUrlDeepLinks() {
   }
 }
 
+function classifyLiveCategory(title, desc) {
+  const titleLower = String(title || '').toLowerCase();
+  const fullText = `${titleLower} ${String(desc || '').toLowerCase()}`;
+  const rules = [
+    ['Foods', /\b(toast|bread|food|foods|cooking|culinary|pizza|chocolate|cheese|coffee|tea|recipe|fruit|vegetable|spice|sugar|salt|beverage|snack|meal|dish|dessert|ice cream|pasta|cereal)\b/i],
+    ['Animals', /\b(animal|animals|creature|species|squid|octopus|shark|horse|horses|equine|dog|dogs|cat|cats|bird|birds|whale|whales|insect|insects|reptile|mammal|dinosaur|mollusk|wildlife|predator|prey|zoology)\b/i],
+    ['Biographies', /\b(robert smalls|biography|biographies|born in|childhood|enslaved|abolitionist|president|monarch|emperor|queen|king|inventor|pioneer|visionary)\b/i],
+    ['Art', /\b(art|artist|painting|painter|sculpture|sculptor|museum|gallery|architecture|architect|fresco|canvas|pigment|renaissance|impressionism)\b/i],
+    ['Geography', /\b(geography|river|mountain|volcano|island|peninsula|continent|ocean|desert|canyon|glacier|national park|subterranean|city of|country|archipelago)\b/i],
+    ['Pop Culture', /\b(movie|movies|cinema|film|television|tv show|video game|toy|toys|comic|superhero|broadway|grammy|oscar|pop culture|theme park|roller coaster)\b/i],
+    ['Science', /\b(battery|batteries|email|arpanet|electronic|voltage|anode|cathode|electrolyte|bioluminescence|chemical|chemistry|physics|physicist|astronomy|space shuttle|nasa|planet|molecule|dna|neuron|laser|quantum|engineering)\b/i],
+    ['History', /\b(history|historical|civil war|world war|ancient|medieval|empire|revolution|colonial|century|dynasty|treaty|election|salem|archaeology)\b/i]
+  ];
+  for (const [cat, re] of rules) {
+    if (re.test(titleLower)) return cat;
+  }
+  let bestCat = 'History';
+  let bestScore = 0;
+  for (const [cat, re] of rules) {
+    const m = fullText.match(new RegExp(re.source, 'gi'));
+    const cnt = m ? m.length : 0;
+    if (cnt > bestScore) {
+      bestScore = cnt;
+      bestCat = cat;
+    }
+  }
+  return bestCat;
+}
+
+function shuffleLiveOptions(correctOpt, distractors, seedStr) {
+  let hash = 2166136261;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash ^= seedStr.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const targetIdx = Math.abs(hash) % 4;
+  const options = [...distractors.slice(0, 3)];
+  options.splice(targetIdx, 0, correctOpt);
+  return { options, correctIndex: targetIdx };
+}
+
 async function checkLiveRssFeed(latestKnownGuid) {
   if (typeof DOMParser === 'undefined') return null;
   try {
@@ -384,7 +425,7 @@ async function checkLiveRssFeed(latestKnownGuid) {
 
       const pubDate = item.querySelector('pubDate')?.textContent?.trim() || new Date().toUTCString();
       const durationSec = parseInt(item.querySelector('duration, itunes\\:duration')?.textContent || '900', 10) || 900;
-      const rawImg = item.querySelector('image, itunes\\:image')?.getAttribute('href') || '';
+      const rawImg = (item.querySelector('image, itunes\\:image')?.getAttribute('href') || '').replace(/&amp;/g, '&');
       const artworkUrl = rawImg ? rawImg.replace('max-w=3000&max-h=3000', 'max-w=600&max-h=600') : SHOW_CONFIG.defaultArtwork;
       const audioUrl = item.querySelector('enclosure')?.getAttribute('url') || '';
       const rawDesc = item.querySelector('description')?.textContent || '';
@@ -392,35 +433,95 @@ async function checkLiveRssFeed(latestKnownGuid) {
         .replace(/<[^>]+>/g, ' ')
         .replace(/&nbsp;/g, ' ')
         .replace(/\s+/g, ' ')
-        .replace(/\s*Listen Ad-Free on Patreon.*$/i, '')
+        .replace(/\s*Listen Ad-Free on Patreon[\s\S]*$/i, '')
+        .replace(/\s*Want to learn more\? Head over to my website[\s\S]*$/i, '')
         .trim();
 
       const sentences = cleanDesc
         .split(/(?<=[.?!])\s+/)
         .map((s) => s.trim())
-        .filter((s) => s.length > 25 && !/patreon|airwave|megaphone|who arted/i.test(s));
+        .filter((s) => s.length > 30 && !/patreon|airwave|megaphone|who arted|art smart|rainbow puppy/i.test(s));
 
       const topic = title.replace(/^Fun Facts About (the )?/i, '').trim();
-      const firstFact = sentences[0] || `${topic} features fascinating details.`;
-      const secondFact = sentences[1] || sentences[0] || `There is much more to discover about ${topic}.`;
+      const category = classifyLiveCategory(title, cleanDesc);
+      const candidates = [];
 
-      let category = 'History';
-      const text = `${title} ${cleanDesc}`.toLowerCase();
-      if (/animal|creature|species|squid|shark|horse|dog|cat|bird|whale|insect|reptile|mammal|dinosaur|mollusk/i.test(text)) {
-        category = 'Animals';
-      } else if (/food|cooking|pizza|chocolate|cheese|coffee|tea|recipe|fruit|bread/i.test(text)) {
-        category = 'Foods';
-      } else if (/art|painting|artist|sculpture|museum|drawing|color|gallery/i.test(text)) {
-        category = 'Art';
-      } else if (/science|biology|physics|chemistry|space|planet|galaxy|atom|dna|cell|light/i.test(text)) {
-        category = 'Science';
-      } else if (/geography|river|mountain|country|ocean|island|city|continent|capital/i.test(text)) {
-        category = 'Geography';
-      } else if (/movie|tv|song|music|hollywood|game|film|actor|pop/i.test(text)) {
-        category = 'Pop Culture';
-      } else if (/inventor|president|leader|biography|born|life of|scientist/i.test(text)) {
-        category = 'Biographies';
+      for (let sIdx = 0; sIdx < sentences.length; sIdx++) {
+        const s = sentences[sIdx];
+        const nextS = sentences[sIdx + 1] || '';
+        const explanation = nextS ? `${s} ${nextS}` : `${s} Listen to the episode to discover even more about ${topic}!`;
+
+        const termMatch = s.match(/\b(?:known as|called|termed|named|dubbed)\s+(?:the\s+)?["“]?([A-Z]?[a-zA-Z0-9-]+(?:\s+[a-zA-Z0-9-]+){0,3})["”]?/);
+        if (termMatch && termMatch[1].length >= 4 && termMatch[1].length <= 36) {
+          const term = termMatch[1].replace(/[.,;:"”]$/, '').trim();
+          const clue = s.replace(termMatch[0], 'what specialized term or phenomenon').replace(/\.$/, '');
+          candidates.push({
+            type: 'term',
+            question: `In the episode on ${topic}, ${clue.charAt(0).toLowerCase() + clue.slice(1)}?`,
+            correct: term.charAt(0).toUpperCase() + term.slice(1),
+            distractors: ['The Kelvin-Helmholtz cascade', 'Osmotic phase equilibrium', 'The Coriolis resonance effect'],
+            explanation
+          });
+        }
+
+        const personMatch = s.match(/\b(?:by|when)\s+(?:[a-z-]+\s+){0,3}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/);
+        if (personMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/.test(personMatch[1])) {
+          const person = personMatch[1].trim();
+          const masked = s.replace(person, 'which historical figure or researcher').replace(/\.$/, '');
+          candidates.push({
+            type: 'person',
+            question: `According to the episode on ${topic}, ${masked.charAt(0).toLowerCase() + masked.slice(1)}?`,
+            correct: person,
+            distractors: ['Humphry Davy', 'Alexander von Humboldt', 'Joseph Priestley'],
+            explanation
+          });
+        }
+
+        const yearMatch = s.match(/\b(?:in|during)\s+(?:late\s+|early\s+)?(1[6-9]\d\d|20[0-2]\d)\b/i);
+        if (yearMatch) {
+          const yr = Number(yearMatch[1]);
+          const masked = s.replace(yearMatch[1], 'what year').replace(/\.$/, '');
+          candidates.push({
+            type: 'year',
+            question: `In the history of ${topic}, ${masked.charAt(0).toLowerCase() + masked.slice(1)}?`,
+            correct: String(yr),
+            distractors: [String(yr - 18), String(yr + 14), String(yr + 31)],
+            explanation
+          });
+        }
       }
+
+      if (candidates.length < 2) {
+        const s0 = sentences[0] || `${topic} features fascinating history and science.`;
+        const s1 = sentences[1] || s0;
+        candidates.push({
+          type: 'gen1',
+          question: `What primary characteristic or breakthrough is highlighted in the episode on ${topic}?`,
+          correct: 'Its specialized structure and historical evolution',
+          distractors: [
+            'Its complete reliance on sub-zero polar temperatures',
+            'Its accidental ban across nineteenth-century maritime trade',
+            'Its inability to function outside laboratory vacuum chambers'
+          ],
+          explanation: `${s0} ${s1}`
+        });
+        candidates.push({
+          type: 'gen2',
+          question: `Which additional aspect of ${topic} is explored in the episode?`,
+          correct: 'Real-world applications and surprising physical adaptations',
+          distractors: [
+            'Why ancient astronomers mistook it for a planetary alignment',
+            'How medieval guilds kept its formula secret for 400 years',
+            'Why modern scientists classify it as a synthetic mineral'
+          ],
+          explanation: sentences.slice(1, 3).join(' ') || s0
+        });
+      }
+
+      const primary = candidates[0];
+      const secondary = candidates.find((c, idx) => idx > 0 && c.type !== primary.type) || candidates[1];
+      const q1 = shuffleLiveOptions(primary.correct, primary.distractors, `${guid}_main`);
+      const q2 = shuffleLiveOptions(secondary.correct, secondary.distractors, `${guid}_vault`);
 
       return {
         guid,
@@ -431,27 +532,17 @@ async function checkLiveRssFeed(latestKnownGuid) {
         audioUrl,
         appleUrl: SHOW_CONFIG.appleShowUrl,
         category,
-        cueSeconds: 140,
-        question: `In this Fun Facts Daily episode about ${topic}, which of the following is true?`,
-        options: [
-          firstFact.length > 95 ? firstFact.slice(0, 92) + '...' : firstFact,
-          'It was completely disproved by twentieth-century scientific surveys.',
-          'It was accidentally discovered during an Antarctic expedition in 1845.',
-          'It only occurs during polar winter seasons.'
-        ],
-        correctIndex: 0,
-        explanation: `${sentences.slice(0, 2).join(' ')} Listen to the episode player to hear Kyle explain!`,
+        cueSeconds: 165,
+        question: primary.question,
+        options: q1.options,
+        correctIndex: q1.correctIndex,
+        explanation: primary.explanation,
         vaultBonus: {
-          cueSeconds: 280,
-          question: `What additional standout detail is shared about ${topic}?`,
-          options: [
-            secondFact.length > 95 ? secondFact.slice(0, 92) + '...' : secondFact,
-            'It requires temperatures below freezing to survive.',
-            'It violates the second law of thermodynamics.',
-            'It was officially prohibited in medieval European territories.'
-          ],
-          correctIndex: 0,
-          explanation: `${secondFact} Check out the episode audio player to explore more!`
+          cueSeconds: 480,
+          question: secondary.question,
+          options: q2.options,
+          correctIndex: q2.correctIndex,
+          explanation: secondary.explanation
         }
       };
     }
@@ -2974,8 +3065,9 @@ function bindModalEvents() {
     renderStudioResults('');
     studioModal.hidden = false;
   };
-  document.getElementById('btn-open-studio').addEventListener('click', openStudioModal);
-  document.getElementById('drawer-btn-studio').addEventListener('click', openStudioModal);
+  if (new URLSearchParams(window.location.search).get('studio') === '1') {
+    openStudioModal();
+  }
 
   document.getElementById('studio-search-input').addEventListener('input', (ev) => {
     renderStudioResults(ev.target.value);

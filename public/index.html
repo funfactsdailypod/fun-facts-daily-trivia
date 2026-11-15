@@ -32,19 +32,23 @@
     </a>
   </div>
 
-  <!-- Decorative Memphis Geometric Background Layer -->
+  <!-- Fixed 100%-Stretched Non-Tiled Background Wallpaper -->
+  <div class="wallpaper-fixed-bg" aria-hidden="true"></div>
+
+  <!-- Translucent Drifting Geometric Shapes (Above Wallpaper, Under Site Windows) -->
   <div class="memphis-bg" aria-hidden="true">
-    <svg class="m-shape m-shape--squiggle" viewBox="0 0 180 48" fill="none">
-      <path d="M6 34C22 10 38 10 54 34C70 58 86 58 102 34C118 10 134 10 150 34C160 48 168 48 174 34" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
-    </svg>
-    <svg class="m-shape m-shape--triangle" viewBox="0 0 90 80" fill="none">
-      <polygon points="45,6 84,74 6,74" fill="currentColor" stroke="#181824" stroke-width="5" stroke-linejoin="round"/>
-    </svg>
-    <svg class="m-shape m-shape--donut" viewBox="0 0 90 90" fill="none">
-      <circle cx="45" cy="45" r="30" stroke="currentColor" stroke-width="14"/>
-      <circle cx="45" cy="45" r="37" stroke="#181824" stroke-width="3.5"/>
-    </svg>
-    <div class="m-shape m-shape--dots"></div>
+    <span class="drift-shape drift-shape--1"></span>
+    <span class="drift-shape drift-shape--2"></span>
+    <span class="drift-shape drift-shape--3"></span>
+    <span class="drift-shape drift-shape--4"></span>
+    <span class="drift-shape drift-shape--5"></span>
+    <span class="drift-shape drift-shape--6"></span>
+    <span class="drift-shape drift-shape--7"></span>
+    <span class="drift-shape drift-shape--8"></span>
+    <span class="drift-shape drift-shape--9"></span>
+    <span class="drift-shape drift-shape--10"></span>
+    <span class="drift-shape drift-shape--11"></span>
+    <span class="drift-shape drift-shape--12"></span>
   </div>
 
   <!-- Confetti Canvas & Celebration Toast Stack -->
@@ -107,25 +111,12 @@
       </div>
 
       <div class="drawer-actions-col">
-        <a
-          href="https://www.patreon.com/cw/FunFactsDailyPod"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="patreon-cta-btn patreon-cta-btn--full"
-          id="drawer-btn-patreon"
-        >
-          🧡 Support Fun Facts Daily on Patreon ↗
-        </a>
-
         <div class="drawer-utility-row">
           <button type="button" class="icon-action-btn icon-action-btn--install" id="drawer-btn-install-app">
             📲 Save to Your Phone
           </button>
           <button type="button" class="icon-action-btn" id="drawer-btn-sync">
             🔄 Sync Progress
-          </button>
-          <button type="button" class="icon-action-btn" id="drawer-btn-studio" title="Host Studio">
-            🎙️ Studio
           </button>
         </div>
       </div>
@@ -135,7 +126,7 @@
   <!-- Full Top Site Header (Scrolls Away Naturally as User Scrolls Down) -->
   <header class="site-header" id="site-header">
     <div class="header-inner">
-      <div class="header-top-row">
+      <div class="header-bottom-row">
         <a href="#top" class="brand-logo" id="brand-home-link">
           <div class="brand-logo-frame">
             <img
@@ -152,29 +143,6 @@
           </div>
         </a>
 
-        <div class="header-cta-cluster">
-          <a
-            href="https://www.patreon.com/cw/FunFactsDailyPod"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="patreon-cta-btn"
-            id="btn-patreon-top"
-          >
-            🧡 Support Fun Facts Daily on Patreon ↗
-          </a>
-
-          <button
-            type="button"
-            class="icon-action-btn icon-action-btn--install"
-            id="btn-install-app"
-            title="Add Fun Facts Daily to your phone Home Screen"
-          >
-            📲 Save to Your Phone
-          </button>
-        </div>
-      </div>
-
-      <div class="header-bottom-row">
         <nav class="mode-switcher" aria-label="App Sections">
           <button type="button" class="mode-btn is-active" id="btn-mode-solo" data-switch-mode="solo">
             ☀️ Trivia
@@ -216,10 +184,6 @@
 
           <button type="button" class="icon-action-btn" id="btn-open-sync" title="Save or transfer your streak, playlists &amp; points across devices">
             🔄
-          </button>
-
-          <button type="button" class="icon-action-btn" id="btn-open-studio" title="Host Studio: Inspect &amp; edit episode questions">
-            🎙️
           </button>
         </div>
       </div>
@@ -971,6 +935,26 @@
             <path d="M4 10.2v2.8a7.2 7.2 0 0 1 7.2 7.2H14A10 10 0 0 0 4 10.2zm0-6.2v2.8A13.2 13.2 0 0 1 17.2 20H20A16 16 0 0 0 4 4z"/>
           </svg>
         </a>
+      </div>
+      <div class="footer-cta-bar">
+        <a
+          href="https://www.patreon.com/cw/FunFactsDailyPod"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="patreon-cta-btn"
+          id="btn-patreon-footer"
+        >
+          🧡 Support Fun Facts Daily on Patreon ↗
+        </a>
+
+        <button
+          type="button"
+          class="icon-action-btn icon-action-btn--install footer-save-phone-btn"
+          id="btn-install-app"
+          title="Add Fun Facts Daily to your phone Home Screen"
+        >
+          📲 Save to Your Phone
+        </button>
       </div>
     </div>
 
