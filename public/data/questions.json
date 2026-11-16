@@ -1,5 +1,37 @@
 [
   {
+    "guid": "89a8b538-e156-11f1-b956-7b98132a01bb",
+    "title": "Fun Facts About the Svalbard Global Seed Vault",
+    "pubDate": "Mon, 16 Nov 2026 08:10:00 -0000",
+    "durationSec": 947,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/89a8b538-e156-11f1-b956-7b98132a01bb/image/b8178448a403b204b00f1a2d390897a6.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML3676506842.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-the-svalbard-global-seed-vault/id1810507693?i=1000802205943&uo=4",
+    "category": "Art",
+    "cueSeconds": 165,
+    "question": "What primary characteristic or breakthrough is highlighted at the start of the episode on Svalbard Global Seed Vault?",
+    "options": [
+      "Its complete reliance on sub-zero polar temperatures",
+      "Its accidental ban across nineteenth-century maritime trade",
+      "Its inability to function outside laboratory vacuum chambers",
+      "Its specialized structure and historical evolution"
+    ],
+    "correctIndex": 3,
+    "explanation": "The Svalbard Global Seed Vault is a vital international agricultural failsafe, housing duplicate seed samples from gene banks across the globe deep within the permafrost of Spitsbergen, Norway. Designed to withstand natural and man-made disasters, the facility operates under a \"black box\" storage model where depositing nations retain 100% legal ownership of their seeds, ensuring neutrality and confidentiality even among geopolitical rivals.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "Which additional aspect of Svalbard Global Seed Vault is explored later in the episode?",
+      "options": [
+        "Why ancient astronomers mistook it for a planetary alignment",
+        "How medieval guilds kept its formula secret for 400 years",
+        "Real-world applications and surprising physical adaptations",
+        "Why modern scientists classify it as a synthetic mineral"
+      ],
+      "correctIndex": 2,
+      "explanation": "Designed to withstand natural and man-made disasters, the facility operates under a \"black box\" storage model where depositing nations retain 100% legal ownership of their seeds, ensuring neutrality and confidentiality even among geopolitical rivals. Situated inside a mountain tunnel shielded by advanced security systems and natural sub-zero rock insulation, the vault maintains active storage rooms at -18°C (-0.4°F) to preserve crop genetic diversity for future generations."
+    }
+  },
+  {
     "guid": "2663de16-df09-11f1-8635-9ff15a42c34c",
     "title": "Fun Facts About Batteries",
     "pubDate": "Fri, 13 Nov 2026 08:10:00 -0000",
