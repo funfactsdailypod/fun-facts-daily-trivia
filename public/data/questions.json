@@ -1,5 +1,37 @@
 [
   {
+    "guid": "19d9d5ae-e23a-11f1-bcbd-9701b6f4f8c0",
+    "title": "Fun Facts About Impressionism",
+    "pubDate": "Tue, 17 Nov 2026 08:10:00 -0000",
+    "durationSec": 1095,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/19d9d5ae-e23a-11f1-bcbd-9701b6f4f8c0/image/41520164456323a0e51f9193634a3419.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1431112269.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-impressionism/id1810507693?i=1000802429219&uo=4",
+    "category": "Art",
+    "cueSeconds": 165,
+    "question": "According to the episode on Impressionism, the movement's iconic moniker originated as a derogatory review by critic which historical figure or researcher following the anonymous cooperative society exhibition of 1874, where Claude Monet's Impression, Sunrise was singled out for its sketch-like quality; rather than rejecting the insult, the artists embraced the title?",
+    "options": [
+      "Louis Leroy",
+      "Humphry Davy",
+      "Alexander von Humboldt",
+      "Joseph Priestley"
+    ],
+    "correctIndex": 0,
+    "explanation": "The movement's iconic moniker originated as a derogatory review by critic Louis Leroy following the anonymous cooperative society exhibition of 1874, where Claude Monet's Impression, Sunrise was singled out for its sketch-like quality; rather than rejecting the insult, the artists embraced the title. Technological advancements played a pivotal role in enabling plein-air painting, particularly John Goffe Rand's 1841 invention of the collapsible tin paint tube, which replaced fragile pig-bladder pouches and allowed artists to work portably outdoors alongside newly developed synthetic pigments like cobalt blue and viridian.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "What primary characteristic or breakthrough is highlighted at the start of the episode on Impressionism?",
+      "options": [
+        "Its complete reliance on sub-zero polar temperatures",
+        "Its specialized structure and historical evolution",
+        "Its accidental ban across nineteenth-century maritime trade",
+        "Its inability to function outside laboratory vacuum chambers"
+      ],
+      "correctIndex": 1,
+      "explanation": "Impressionism emerged in 19th-century France as a radical departure from academic traditions, driven by artists seeking to capture fleeting atmospheric conditions, shifting sunlight, and contemporary daily life through visible brushwork and impasto texture. The movement's iconic moniker originated as a derogatory review by critic Louis Leroy following the anonymous cooperative society exhibition of 1874, where Claude Monet's Impression, Sunrise was singled out for its sketch-like quality; rather than rejecting the insult, the artists embraced the title."
+    }
+  },
+  {
     "guid": "89a8b538-e156-11f1-b956-7b98132a01bb",
     "title": "Fun Facts About the Svalbard Global Seed Vault",
     "pubDate": "Mon, 16 Nov 2026 08:10:00 -0000",
