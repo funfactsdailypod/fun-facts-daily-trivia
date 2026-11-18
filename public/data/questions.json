@@ -1,5 +1,37 @@
 [
   {
+    "guid": "5e6aa858-e2f1-11f1-906d-a3f092fe795d",
+    "title": "Fun Facts About Zebras",
+    "pubDate": "Wed, 18 Nov 2026 08:10:00 -0000",
+    "durationSec": 930,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/5e6aa858-e2f1-11f1-906d-a3f092fe795d/image/28fcc65a28f5c5884c5ad0065eb94688.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1489570567.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-zebras/id1810507693?i=1000802656276&uo=4",
+    "category": "Animals",
+    "cueSeconds": 165,
+    "question": "Regarding Zebras, far from functioning as camouflage against large savanna predators like lions, whose visual acuity fails to distinguish individual stripes at distances exceeding how many feet, these high-contrast patterns act as an effective optical defense against biting horseflies?",
+    "options": [
+      "Exactly 2 feet",
+      "164 feet",
+      "Roughly 45 feet",
+      "More than 250 feet"
+    ],
+    "correctIndex": 1,
+    "explanation": "Far from functioning as camouflage against large savanna predators like lions, whose visual acuity fails to distinguish individual stripes at distances exceeding 164 feet, these high-contrast patterns act as an effective optical defense against biting horseflies. The overlapping visual lines scramble the insects' flight mechanics, causing them to miss their landing and bounce off the coat.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "What primary characteristic or breakthrough is highlighted at the start of the episode on Zebras?",
+      "options": [
+        "Its specialized structure and historical evolution",
+        "Its complete reliance on sub-zero polar temperatures",
+        "Its accidental ban across nineteenth-century maritime trade",
+        "Its inability to function outside laboratory vacuum chambers"
+      ],
+      "correctIndex": 0,
+      "explanation": "Zebras are iconic African equines recognized worldwide for their distinctive black-and-white striped coats, which conceal jet-black skin beneath unpigmented white and pigmented black hair. Far from functioning as camouflage against large savanna predators like lions, whose visual acuity fails to distinguish individual stripes at distances exceeding 164 feet, these high-contrast patterns act as an effective optical defense against biting horseflies."
+    }
+  },
+  {
     "guid": "19d9d5ae-e23a-11f1-bcbd-9701b6f4f8c0",
     "title": "Fun Facts About Impressionism",
     "pubDate": "Tue, 17 Nov 2026 08:10:00 -0000",
