@@ -1,5 +1,37 @@
 [
   {
+    "guid": "2dbdf010-e3b0-11f1-9667-57e19642bd55",
+    "title": "Fun Facts About Your Nervous System",
+    "pubDate": "Thu, 19 Nov 2026 08:10:00 -0000",
+    "durationSec": 879,
+    "artworkUrl": "https://megaphone.imgix.net/podcasts/2dbdf010-e3b0-11f1-9667-57e19642bd55/image/baf2e1f381c18a2a6f1b1cf0d5d7da63.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1560107009.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693",
+    "category": "Science",
+    "cueSeconds": 165,
+    "question": "Regarding Your Nervous System, nerve signals travel at varying speeds depending on myelination, with insulated alpha motor neurons transmitting electrical impulses at speeds how many hour via saltatory conduction, while unmyelinated pain fibers transmit sensations at much slower rates?",
+    "options": [
+      "Up to 268 miles per hour",
+      "Exactly 2 hour",
+      "Roughly 45 hour",
+      "More than 250 hour"
+    ],
+    "correctIndex": 0,
+    "explanation": "Nerve signals travel at varying speeds depending on myelination, with insulated alpha motor neurons transmitting electrical impulses at speeds up to 268 miles per hour via saltatory conduction, while unmyelinated pain fibers transmit sensations at much slower rates. Specialized neural pathways, such as reflex arcs, bypass the brain entirely during emergencies, routing signals through the spinal cord and interneurons to initiate rapid protective muscular reactions in fractions of a second before conscious processing occurs.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "Regarding Your Nervous System, the body's longest single nerve, the sciatic nerve, spans how many feet from the lower spine down to the foot, simultaneously delivering motor commands and sensory feedback?",
+      "options": [
+        "Exactly 2 feet",
+        "Over three feet",
+        "Roughly 45 feet",
+        "More than 250 feet"
+      ],
+      "correctIndex": 1,
+      "explanation": "The body's longest single nerve, the sciatic nerve, spans over three feet from the lower spine down to the foot, simultaneously delivering motor commands and sensory feedback. Operating on approximately 20 watts of electrical power, the brain consumes nearly 20 percent of the body's total energy despite accounting for only two percent of total body weight, utilizing continuous neural activity across all regions to disprove the persistent myth that humans only use ten percent of their capacity."
+    }
+  },
+  {
     "guid": "5e6aa858-e2f1-11f1-906d-a3f092fe795d",
     "title": "Fun Facts About Zebras",
     "pubDate": "Wed, 18 Nov 2026 08:10:00 -0000",
