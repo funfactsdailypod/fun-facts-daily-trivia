@@ -369,7 +369,7 @@ function classifyLiveCategory(title, desc) {
     ['Art', /\b(art|artist|painting|painter|sculpture|sculptor|museum|gallery|architecture|architect|fresco|canvas|pigment|renaissance|impressionism)\b/i],
     ['Geography', /\b(geography|river|mountain|volcano|island|peninsula|continent|ocean|desert|canyon|glacier|national park|subterranean|city of|country|archipelago)\b/i],
     ['Pop Culture', /\b(movie|movies|cinema|film|television|tv show|video game|toy|toys|comic|superhero|broadway|grammy|oscar|pop culture|theme park|roller coaster)\b/i],
-    ['Science', /\b(battery|batteries|email|arpanet|electronic|voltage|anode|cathode|electrolyte|bioluminescence|chemical|chemistry|physics|physicist|astronomy|space shuttle|nasa|planet|molecule|dna|neuron|laser|quantum|engineering)\b/i],
+    ['Science', /\b(nervous system|neuron|neurons|myelin|brain|spinal|nerve|nerves|seed vault|svalbard|permafrost|seed|seeds|battery|batteries|email|arpanet|electronic|voltage|anode|cathode|electrolyte|bioluminescence|chemical|chemistry|physics|physicist|astronomy|space shuttle|nasa|planet|molecule|dna|laser|quantum|engineering)\b/i],
     ['History', /\b(history|historical|civil war|world war|ancient|medieval|empire|revolution|colonial|century|dynasty|treaty|election|salem|archaeology)\b/i]
   ];
   for (const [cat, re] of rules) {
@@ -442,7 +442,8 @@ async function checkLiveRssFeed(latestKnownGuid) {
         .map((s) => s.trim())
         .filter((s) => s.length > 30 && !/patreon|airwave|megaphone|who arted|art smart|rainbow puppy/i.test(s));
 
-      const topic = title.replace(/^Fun Facts About (the )?/i, '').trim();
+      const topic = title.replace(/^Fun Facts About (the |Your )?/i, '').trim();
+      const topicLower = topic.toLowerCase();
       const category = classifyLiveCategory(title, cleanDesc);
       const candidates = [];
 
@@ -451,41 +452,88 @@ async function checkLiveRssFeed(latestKnownGuid) {
         const nextS = sentences[sIdx + 1] || '';
         const explanation = nextS ? `${s} ${nextS}` : `${s} Listen to the episode to discover even more about ${topic}!`;
 
-        const termMatch = s.match(/\b(?:known as|called|termed|named|dubbed)\s+(?:the\s+)?["“]?([A-Z]?[a-zA-Z0-9-]+(?:\s+[a-zA-Z0-9-]+){0,3})["”]?/);
-        if (termMatch && termMatch[1].length >= 4 && termMatch[1].length <= 36) {
+        const coinedMatch = s.match(
+          /\b(?:moniker|term|name|word)\b[^.]{0,45}?\b(?:originated|coined)[^.]{0,35}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i
+        );
+        if (coinedMatch) {
+          candidates.push({
+            type: 'person',
+            question: `Who coined the name for ${topic}?`,
+            correct: coinedMatch[1].trim(),
+            distractors: ['Humphry Davy', 'Alexander von Humboldt', 'Joseph Priestley'],
+            explanation
+          });
+        }
+
+        const invMatch = s.match(
+          /\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+invention\s+of|\s+(?:invented|discovered|created|developed|isolated))\s+(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/
+        );
+        if (invMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/.test(invMatch[1])) {
+          const obj = invMatch[2].replace(/[.,;:]$/, '').trim();
+          candidates.push({
+            type: 'inventor',
+            question: `Who invented or discovered the ${obj}?`,
+            correct: invMatch[1].trim(),
+            distractors: ['Michael Faraday', 'Thomas Edison', 'Antoine Lavoisier'],
+            explanation
+          });
+        }
+
+        const speedMatch = s.match(/\b(?:speeds?\s+(?:of\s+|up to\s+|reaching\s+)?|travel(?:ing)?\s+(?:at\s+|up to\s+)?)(\d+(?:,\d+)?\s+miles per hour)\b/i);
+        if (speedMatch) {
+          const spd = speedMatch[1].trim();
+          const numVal = parseInt(spd, 10) || 100;
+          candidates.push({
+            type: 'speed',
+            question: `What top speed is highlighted in the episode on ${topic}?`,
+            correct: `Up to ${spd}`,
+            distractors: [
+              `Up to ${Math.max(5, Math.round(numVal * 0.15))} miles per hour`,
+              `Up to ${Math.round(numVal * 0.45)} miles per hour`,
+              `Up to ${Math.round(numVal * 2.1)} miles per hour`
+            ],
+            explanation
+          });
+        }
+
+        const funcMatch = s.match(/\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as)\s+(?:an?\s+)?([^,.;()]{10,52})/i);
+        if (funcMatch) {
+          const role = funcMatch[1].trim();
+          candidates.push({
+            type: 'function',
+            question: `What special role or defense is described in the episode on ${topic}?`,
+            correct: role.charAt(0).toUpperCase() + role.slice(1),
+            distractors: [
+              'Camouflaging against large predators in tall grass',
+              'Absorbing solar heat to stay warm overnight',
+              'Signaling social rank to rival herds'
+            ],
+            explanation
+          });
+        }
+
+        const termMatch = s.match(
+          /\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i
+        );
+        if (termMatch) {
           const term = termMatch[1].replace(/[.,;:"”]$/, '').trim();
-          const clue = s.replace(termMatch[0], 'what specialized term or phenomenon').replace(/\.$/, '');
           candidates.push({
             type: 'term',
-            question: `In the episode on ${topic}, ${clue.charAt(0).toLowerCase() + clue.slice(1)}?`,
+            question: `Which specialized process or system is central to ${topicLower}?`,
             correct: term.charAt(0).toUpperCase() + term.slice(1),
             distractors: ['The Kelvin-Helmholtz cascade', 'Osmotic phase equilibrium', 'The Coriolis resonance effect'],
             explanation
           });
         }
 
-        const personMatch = s.match(/\b(?:by|when)\s+(?:[a-z-]+\s+){0,3}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/);
-        if (personMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/.test(personMatch[1])) {
-          const person = personMatch[1].trim();
-          const masked = s.replace(person, 'which historical figure or researcher').replace(/\.$/, '');
+        const locMatch = s.match(/\b(?:located|situated|permafrost|island)\s+(?:deep\s+)?(?:in|within|beneath|on|of)\s+([A-Z][A-Za-z]+(?:,?\s+[A-Z][A-Za-z]+){0,2})/);
+        if (locMatch && locMatch[1].length >= 4 && locMatch[1].length <= 34) {
+          const place = locMatch[1].replace(/[.,;:]$/, '').trim();
           candidates.push({
-            type: 'person',
-            question: `According to the episode on ${topic}, ${masked.charAt(0).toLowerCase() + masked.slice(1)}?`,
-            correct: person,
-            distractors: ['Humphry Davy', 'Alexander von Humboldt', 'Joseph Priestley'],
-            explanation
-          });
-        }
-
-        const yearMatch = s.match(/\b(?:in|during)\s+(?:late\s+|early\s+)?(1[6-9]\d\d|20[0-2]\d)\b/i);
-        if (yearMatch) {
-          const yr = Number(yearMatch[1]);
-          const masked = s.replace(yearMatch[1], 'what year').replace(/\.$/, '');
-          candidates.push({
-            type: 'year',
-            question: `In the history of ${topic}, ${masked.charAt(0).toLowerCase() + masked.slice(1)}?`,
-            correct: String(yr),
-            distractors: [String(yr - 18), String(yr + 14), String(yr + 31)],
+            type: 'location',
+            question: `Where is ${topic} located?`,
+            correct: place,
+            distractors: ['Reykjavik, Iceland', 'Geneva, Switzerland', 'Baffin Island, Canada'],
             explanation
           });
         }

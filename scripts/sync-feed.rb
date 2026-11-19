@@ -64,7 +64,7 @@ def classify_category(title, desc)
     ['Art', /\b(art|artist|painting|painter|sculpture|sculptor|museum|gallery|architecture|architect|fresco|canvas|pigment|renaissance|impressionism)\b/i],
     ['Geography', /\b(geography|river|mountain|volcano|island|peninsula|continent|ocean|desert|canyon|glacier|national park|subterranean|city of|country|archipelago)\b/i],
     ['Pop Culture', /\b(movie|movies|cinema|film|television|tv show|video game|toy|toys|comic|superhero|broadway|grammy|oscar|pop culture|theme park|roller coaster)\b/i],
-    ['Science', /\b(battery|batteries|email|arpanet|electronic|voltage|anode|cathode|electrolyte|bioluminescence|chemical|chemistry|physics|physicist|astronomy|space shuttle|nasa|planet|molecule|dna|neuron|laser|quantum|engineering)\b/i],
+    ['Science', /\b(nervous system|neuron|neurons|myelin|brain|spinal|nerve|nerves|seed vault|svalbard|permafrost|seed|seeds|battery|batteries|email|arpanet|electronic|voltage|anode|cathode|electrolyte|bioluminescence|chemical|chemistry|physics|physicist|astronomy|space shuttle|nasa|planet|molecule|dna|laser|quantum|engineering)\b/i],
     ['History', /\b(history|historical|civil war|world war|ancient|medieval|empire|revolution|colonial|century|dynasty|treaty|election|salem|archaeology)\b/i]
   ]
 
@@ -93,13 +93,14 @@ end
 
 def build_crafted_trivia_from_notes(ep)
   desc = ep[:description].to_s
-  topic = ep[:title].sub(/^Fun Facts About (the )?/i, '').strip
+  topic = ep[:title].sub(/^Fun Facts About (the |Your )?/i, '').strip
+  topic_lower = topic.downcase
   category = classify_category(ep[:title], desc)
 
   sentences = desc
     .split(/(?<=[.?!])\s+/)
     .map(&:strip)
-    .select { |s| s.length > 30 && s !~ /patreon|airwave|megaphone|who arted|art smart|rainbow puppy|advertising@/i }
+    .select { |s| s.length > 30 && s !~ /patreon|airwave|megaphone|who arted|art smart|rainbow puppy|advertising@|related episodes/i }
 
   candidates = []
 
@@ -107,57 +108,98 @@ def build_crafted_trivia_from_notes(ep)
     next_s = sentences[idx + 1]
     explanation = next_s ? "#{s} #{next_s}" : "#{s} Listen to the episode to discover even more about #{topic}!"
 
-    if (m = s.match(/\b(?:known as|called|termed|named|dubbed)\s+(?:the\s+)?["“]?([A-Z]?[a-zA-Z0-9-]+(?:\s+[a-zA-Z0-9-]+){0,3})["”]?/))
-      term = m[1].sub(/[.,;:"”]$/, '').strip
-      if term.length.between?(4, 36)
-        clue = s.sub(m[0], 'what specialized term or phenomenon').sub(/\.$/, '')
-        candidates << {
-          type: :term,
-          question: "In the episode on #{topic}, #{clue[0].downcase}#{clue[1..-1]}?",
-          correct: term[0].upcase + term[1..-1],
-          distractors: ['The Kelvin-Helmholtz cascade', 'Osmotic phase equilibrium', 'The Coriolis resonance effect'],
-          explanation: explanation
-        }
-      end
-    end
-
-    if (m = s.match(/\b(?:by|when)\s+(?:[a-z-]+\s+){0,3}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/))
+    if (m = s.match(/\b(?:moniker|term|name|word)\b[^.]{0,45}?\b(?:originated|coined)[^.]{0,35}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i))
       person = m[1].strip
+      candidates << {
+        type: :person,
+        question: "Who coined the name for #{topic}?",
+        correct: person,
+        distractors: ['Humphry Davy', 'Alexander von Humboldt', 'Joseph Priestley'],
+        explanation: explanation
+      }
+    end
+
+    if (m = s.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+invention\s+of|\s+(?:invented|discovered|created|developed|isolated))\s+(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/))
+      person = m[1].strip
+      obj = m[2].sub(/[.,;:]$/, '').strip
       unless person =~ /^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/
-        masked = s.sub(person, 'which historical figure or researcher').sub(/\.$/, '')
         candidates << {
-          type: :person,
-          question: "According to the episode on #{topic}, #{masked[0].downcase}#{masked[1..-1]}?",
+          type: :inventor,
+          question: "Who invented or discovered the #{obj}?",
           correct: person,
-          distractors: ['Humphry Davy', 'Alexander von Humboldt', 'Joseph Priestley'],
+          distractors: ['Michael Faraday', 'Thomas Edison', 'Antoine Lavoisier'],
           explanation: explanation
         }
       end
     end
 
-    if (m = s.match(/\b((?:roughly\s+|nearly\s+|over\s+|up to\s+)?(?:\d+(?:,\d+)?(?:\.\d+)?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty|fifty|hundred)\s+(?:to\s+\d+\s+)?(?:hearts|degrees(?:\s+Fahrenheit)?|miles per hour|percent|inches|feet|meters|volts|horsepower|checkpoints|terms|cells|years))\b/i))
-      qty = m[1].strip
-      unit_word = qty.split(/\s+/).last
-      masked = s.sub(qty, "how many #{unit_word}").sub(/\.$/, '')
+    if (m = s.match(/\b(?:speeds?\s+(?:of\s+|up to\s+|reaching\s+)?|travel(?:ing)?\s+(?:at\s+|up to\s+)?)(\d+(?:,\d+)?\s+miles per hour)\b/i))
+      spd = m[1].strip
+      num_val = spd.to_i.nonzero? || 100
       candidates << {
-        type: :number,
-        question: "Regarding #{topic}, #{masked[0].downcase}#{masked[1..-1]}?",
-        correct: qty[0].upcase + qty[1..-1],
-        distractors: ["Exactly 2 #{unit_word}", "Roughly 45 #{unit_word}", "More than 250 #{unit_word}"].reject { |d| d.casecmp?(qty) },
+        type: :speed,
+        question: "What top speed is highlighted in the episode on #{topic}?",
+        correct: "Up to #{spd}",
+        distractors: [
+          "Up to #{[5, (num_val * 0.15).round].max} miles per hour",
+          "Up to #{(num_val * 0.45).round} miles per hour",
+          "Up to #{(num_val * 2.1).round} miles per hour"
+        ],
         explanation: explanation
       }
     end
 
-    if (m = s.match(/\b(?:in|during)\s+(?:late\s+|early\s+)?(1[6-9]\d\d|20[0-2]\d)\b/i))
-      yr = m[1].to_i
-      masked = s.sub(m[1], 'what year').sub(/\.$/, '')
+    if (m = s.match(/\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as)\s+(?:an?\s+)?([^,.;()]{10,52})/i))
+      role = m[1].strip
       candidates << {
-        type: :year,
-        question: "In the history of #{topic}, #{masked[0].downcase}#{masked[1..-1]}?",
-        correct: yr.to_s,
-        distractors: [(yr - 18).to_s, (yr + 14).to_s, (yr + 31).to_s],
+        type: :function,
+        question: "What special role or defense is described in the episode on #{topic}?",
+        correct: role[0].upcase + role[1..-1],
+        distractors: [
+          'Camouflaging against large predators in tall grass',
+          'Absorbing solar heat to stay warm overnight',
+          'Signaling social rank to rival herds'
+        ],
         explanation: explanation
       }
+    end
+
+    if (m = s.match(/\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i))
+      term = m[1].sub(/[.,;:"”]$/, '').strip
+      candidates << {
+        type: :term,
+        question: "Which specialized process or system is central to #{topic_lower}?",
+        correct: term[0].upcase + term[1..-1],
+        distractors: ['The Kelvin-Helmholtz cascade', 'Osmotic phase equilibrium', 'The Coriolis resonance effect'],
+        explanation: explanation
+      }
+    end
+
+    if (m = s.match(/\b(?:located|situated|permafrost|island)\s+(?:deep\s+)?(?:in|within|beneath|on|of)\s+([A-Z][A-Za-z]+(?:,?\s+[A-Z][A-Za-z]+){0,2})/))
+      place = m[1].sub(/[.,;:]$/, '').strip
+      if place.length.between?(4, 34)
+        candidates << {
+          type: :location,
+          question: "Where is #{topic} located?",
+          correct: place,
+          distractors: ['Reykjavik, Iceland', 'Geneva, Switzerland', 'Baffin Island, Canada'],
+          explanation: explanation
+        }
+      end
+    end
+
+    if (m = s.match(/\b(?:features?|possess(?:es)?|has|have|contains?)\s+(?:roughly\s+|nearly\s+|over\s+)?(\d+(?:,\d+)?(?:\s+million|\s+billion)?|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+([a-z]+(?:\s+[a-z]+)?)\b/i))
+      qty = m[1].strip
+      noun = m[2].strip
+      unless noun =~ /^(years|days|hours|minutes|seconds|feet|inches|miles|meters|percent)/i
+        candidates << {
+          type: :count,
+          question: "How many #{noun} are featured in #{topic_lower}?",
+          correct: "#{qty[0].upcase}#{qty[1..-1]} #{noun}",
+          distractors: ["One #{noun.sub(/s$/, '')}", "Fourteen #{noun}", "Fifty #{noun}"],
+          explanation: explanation
+        }
+      end
     end
   end
 
@@ -166,23 +208,23 @@ def build_crafted_trivia_from_notes(ep)
     s1 = sentences[1] || s0
     candidates << {
       type: :general1,
-      question: "What primary characteristic or breakthrough is highlighted at the start of the episode on #{topic}?",
-      correct: 'Its specialized structure and historical evolution',
+      question: "What key feature is highlighted in the episode about #{topic}?",
+      correct: 'Its specialized structure and real-world adaptations',
       distractors: [
         'Its complete reliance on sub-zero polar temperatures',
-        'Its accidental ban across nineteenth-century maritime trade',
+        'Its accidental ban across nineteenth-century trade',
         'Its inability to function outside laboratory vacuum chambers'
       ],
       explanation: "#{s0} #{s1}"
     }
     candidates << {
       type: :general2,
-      question: "Which additional aspect of #{topic} is explored later in the episode?",
-      correct: 'Real-world applications and surprising physical adaptations',
+      question: "What else do we learn about #{topic} in this episode?",
+      correct: 'Surprising scientific discoveries and historical milestones',
       distractors: [
-        'Why ancient astronomers mistook it for a planetary alignment',
-        'How medieval guilds kept its formula secret for 400 years',
-        'Why modern scientists classify it as a synthetic mineral'
+        'Why ancient astronomers mistook it for a comet',
+        'How medieval guilds hid its formula for 400 years',
+        'Why modern geologists classify it as a rare gemstone'
       ],
       explanation: sentences[1..2]&.join(' ').to_s.empty? ? s0 : sentences[1..2].join(' ')
     }
@@ -257,15 +299,14 @@ questions.first(30).each do |q|
 end
 
 new_episodes = []
+recent_items_dump = []
 
-items.each do |item|
+items.each_with_index do |item, idx|
   title = item[/<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/i, 1].to_s.strip
   ep_type = item[/<itunes:episodeType>([\s\S]*?)<\/itunes:episodeType>/i, 1].to_s.strip.downcase
   next if ep_type == 'trailer' || ep_type == 'bonus' || title =~ /^(You Might Also Like|Introducing|Preview|Trailer)/i
 
   guid = item[/<guid[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/guid>/i, 1].to_s.strip
-  next if guid.empty? || known_guids.include?(guid)
-
   pub_date = item[/<pubDate>([\s\S]*?)<\/pubDate>/i, 1].to_s.strip
   duration_sec = (item[/<itunes:duration>([\s\S]*?)<\/itunes:duration>/i, 1] || 900).to_i
   raw_img = item[/<itunes:image[^>]*href="([^"]+)"/i, 1].to_s.gsub('&amp;', '&')
@@ -278,10 +319,9 @@ items.each do |item|
   raw_desc = item[/<content:encoded>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content:encoded>/i, 1] ||
              item[/<description>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/i, 1]
   clean_desc = clean_description(raw_desc)
-
   apple_url = apple_by_guid[guid] || apple_by_title[title.downcase] || APPLE_FALLBACK
 
-  new_episodes << {
+  ep_hash = {
     guid: guid,
     title: title,
     pubDate: pub_date,
@@ -291,7 +331,13 @@ items.each do |item|
     appleUrl: apple_url,
     description: clean_desc
   }
+  recent_items_dump << ep_hash if recent_items_dump.size < 18
+  next if guid.empty? || known_guids.include?(guid)
+
+  new_episodes << ep_hash
 end
+
+File.write('/tmp/ffd_latest_rss.json', JSON.pretty_generate(recent_items_dump))
 
 if new_episodes.empty?
   if apple_updates > 0

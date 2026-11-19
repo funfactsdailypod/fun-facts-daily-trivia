@@ -6,29 +6,29 @@
     "durationSec": 879,
     "artworkUrl": "https://megaphone.imgix.net/podcasts/2dbdf010-e3b0-11f1-9667-57e19642bd55/image/baf2e1f381c18a2a6f1b1cf0d5d7da63.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
     "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1560107009.mp3",
-    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-your-nervous-system/id1810507693?i=1000802884111&uo=4",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693",
     "category": "Science",
-    "cueSeconds": 165,
-    "question": "Regarding Your Nervous System, nerve signals travel at varying speeds depending on myelination, with insulated alpha motor neurons transmitting electrical impulses at speeds how many hour via saltatory conduction, while unmyelinated pain fibers transmit sensations at much slower rates?",
+    "cueSeconds": 145,
+    "question": "How fast can nerve signals travel if the neurons have a myelin sheath?",
     "options": [
+      "Up to 25 miles per hour",
+      "Up to 100 miles per hour",
       "Up to 268 miles per hour",
-      "Exactly 2 hour",
-      "Roughly 45 hour",
-      "More than 250 hour"
+      "Up to 500 miles per hour"
     ],
-    "correctIndex": 0,
-    "explanation": "Nerve signals travel at varying speeds depending on myelination, with insulated alpha motor neurons transmitting electrical impulses at speeds up to 268 miles per hour via saltatory conduction, while unmyelinated pain fibers transmit sensations at much slower rates. Specialized neural pathways, such as reflex arcs, bypass the brain entirely during emergencies, routing signals through the spinal cord and interneurons to initiate rapid protective muscular reactions in fractions of a second before conscious processing occurs.",
+    "correctIndex": 2,
+    "explanation": "Insulated by a protective myelin sheath, alpha motor neurons can transmit electrical impulses at speeds up to 268 miles per hour! Unmyelinated pain fibers, by contrast, travel at a small fraction of that speed.",
     "vaultBonus": {
-      "cueSeconds": 480,
-      "question": "Regarding Your Nervous System, the body's longest single nerve, the sciatic nerve, spans how many feet from the lower spine down to the foot, simultaneously delivering motor commands and sensory feedback?",
+      "cueSeconds": 510,
+      "question": "What is the longest single nerve in the human body?",
       "options": [
-        "Exactly 2 feet",
-        "Over three feet",
-        "Roughly 45 feet",
-        "More than 250 feet"
+        "The sciatic nerve",
+        "The vagus nerve",
+        "The optic nerve",
+        "The ulnar nerve"
       ],
-      "correctIndex": 1,
-      "explanation": "The body's longest single nerve, the sciatic nerve, spans over three feet from the lower spine down to the foot, simultaneously delivering motor commands and sensory feedback. Operating on approximately 20 watts of electrical power, the brain consumes nearly 20 percent of the body's total energy despite accounting for only two percent of total body weight, utilizing continuous neural activity across all regions to disprove the persistent myth that humans only use ten percent of their capacity."
+      "correctIndex": 0,
+      "explanation": "The sciatic nerve spans over three feet from the lower spine all the way down to the foot, delivering motor commands and sensory feedback simultaneously."
     }
   },
   {
@@ -40,27 +40,27 @@
     "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1489570567.mp3",
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-zebras/id1810507693?i=1000802656276&uo=4",
     "category": "Animals",
-    "cueSeconds": 165,
-    "question": "Regarding Zebras, far from functioning as camouflage against large savanna predators like lions, whose visual acuity fails to distinguish individual stripes at distances exceeding how many feet, these high-contrast patterns act as an effective optical defense against biting horseflies?",
+    "cueSeconds": 170,
+    "question": "How do a zebra's stripes help them?",
     "options": [
-      "Exactly 2 feet",
-      "164 feet",
-      "Roughly 45 feet",
-      "More than 250 feet"
+      "They camouflage zebras in tall grass from lions",
+      "They confuse biting horseflies so the insects cannot land",
+      "They absorb sunlight to warm the zebra at night",
+      "They signal social rank within the herd"
     ],
     "correctIndex": 1,
-    "explanation": "Far from functioning as camouflage against large savanna predators like lions, whose visual acuity fails to distinguish individual stripes at distances exceeding 164 feet, these high-contrast patterns act as an effective optical defense against biting horseflies. The overlapping visual lines scramble the insects' flight mechanics, causing them to miss their landing and bounce off the coat.",
+    "explanation": "Lions cannot even distinguish zebra stripes from more than 164 feet away! Instead, a zebra's high-contrast stripes act as an optical defense that scrambles the flight vision of biting horseflies, causing the insects to miss their landing.",
     "vaultBonus": {
-      "cueSeconds": 480,
-      "question": "What primary characteristic or breakthrough is highlighted at the start of the episode on Zebras?",
+      "cueSeconds": 110,
+      "question": "What color is a zebra's skin underneath its black-and-white coat?",
       "options": [
-        "Its specialized structure and historical evolution",
-        "Its complete reliance on sub-zero polar temperatures",
-        "Its accidental ban across nineteenth-century maritime trade",
-        "Its inability to function outside laboratory vacuum chambers"
+        "Jet black",
+        "Pale pink",
+        "Striped black and white",
+        "Tan brown"
       ],
       "correctIndex": 0,
-      "explanation": "Zebras are iconic African equines recognized worldwide for their distinctive black-and-white striped coats, which conceal jet-black skin beneath unpigmented white and pigmented black hair. Far from functioning as camouflage against large savanna predators like lions, whose visual acuity fails to distinguish individual stripes at distances exceeding 164 feet, these high-contrast patterns act as an effective optical defense against biting horseflies."
+      "explanation": "Underneath both their unpigmented white hair and pigmented black hair, zebras actually have solid jet-black skin!"
     }
   },
   {
@@ -72,27 +72,27 @@
     "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1431112269.mp3",
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-impressionism/id1810507693?i=1000802429219&uo=4",
     "category": "Art",
-    "cueSeconds": 165,
-    "question": "According to the episode on Impressionism, the movement's iconic moniker originated as a derogatory review by critic which historical figure or researcher following the anonymous cooperative society exhibition of 1874, where Claude Monet's Impression, Sunrise was singled out for its sketch-like quality; rather than rejecting the insult, the artists embraced the title?",
+    "cueSeconds": 160,
+    "question": "Who coined the term Impressionist?",
     "options": [
-      "Louis Leroy",
-      "Humphry Davy",
-      "Alexander von Humboldt",
-      "Joseph Priestley"
+      "Art critic Louis Leroy",
+      "Painter Claude Monet",
+      "Patron Gustave Caillebotte",
+      "Artist Mary Cassatt"
     ],
     "correctIndex": 0,
-    "explanation": "The movement's iconic moniker originated as a derogatory review by critic Louis Leroy following the anonymous cooperative society exhibition of 1874, where Claude Monet's Impression, Sunrise was singled out for its sketch-like quality; rather than rejecting the insult, the artists embraced the title. Technological advancements played a pivotal role in enabling plein-air painting, particularly John Goffe Rand's 1841 invention of the collapsible tin paint tube, which replaced fragile pig-bladder pouches and allowed artists to work portably outdoors alongside newly developed synthetic pigments like cobalt blue and viridian.",
+    "explanation": "French art critic Louis Leroy coined the term as an insult in his 1874 review mocking Claude Monet's painting Impression, Sunrise for looking like an unfinished sketch. Instead of rejecting the label, the artists proudly adopted it!",
     "vaultBonus": {
-      "cueSeconds": 480,
-      "question": "What primary characteristic or breakthrough is highlighted at the start of the episode on Impressionism?",
+      "cueSeconds": 285,
+      "question": "What 1841 invention made it much easier for Impressionists to paint outdoors?",
       "options": [
-        "Its complete reliance on sub-zero polar temperatures",
-        "Its specialized structure and historical evolution",
-        "Its accidental ban across nineteenth-century maritime trade",
-        "Its inability to function outside laboratory vacuum chambers"
+        "The collapsible tin paint tube",
+        "The folding wooden tripod easel",
+        "Pre-stretched acrylic canvas",
+        "The pocket color wheel"
       ],
-      "correctIndex": 1,
-      "explanation": "Impressionism emerged in 19th-century France as a radical departure from academic traditions, driven by artists seeking to capture fleeting atmospheric conditions, shifting sunlight, and contemporary daily life through visible brushwork and impasto texture. The movement's iconic moniker originated as a derogatory review by critic Louis Leroy following the anonymous cooperative society exhibition of 1874, where Claude Monet's Impression, Sunrise was singled out for its sketch-like quality; rather than rejecting the insult, the artists embraced the title."
+      "correctIndex": 0,
+      "explanation": "John Goffe Rand's 1841 invention of the collapsible tin paint tube replaced fragile pig-bladder pouches, making it easy for Impressionist artists to carry oil paints outdoors for plein-air painting."
     }
   },
   {
@@ -103,28 +103,28 @@
     "artworkUrl": "https://megaphone.imgix.net/podcasts/89a8b538-e156-11f1-b956-7b98132a01bb/image/b8178448a403b204b00f1a2d390897a6.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
     "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML3676506842.mp3",
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-the-svalbard-global-seed-vault/id1810507693?i=1000802205943&uo=4",
-    "category": "Art",
-    "cueSeconds": 165,
-    "question": "What primary characteristic or breakthrough is highlighted at the start of the episode on Svalbard Global Seed Vault?",
+    "category": "Science",
+    "cueSeconds": 140,
+    "question": "Where is the Svalbard Global Seed Vault located?",
     "options": [
-      "Its complete reliance on sub-zero polar temperatures",
-      "Its accidental ban across nineteenth-century maritime trade",
-      "Its inability to function outside laboratory vacuum chambers",
-      "Its specialized structure and historical evolution"
+      "Deep in the permafrost of Spitsbergen, Norway",
+      "Under a glacier near Reykjavik, Iceland",
+      "Inside the Swiss Alps near Geneva",
+      "On Baffin Island in northern Canada"
     ],
-    "correctIndex": 3,
-    "explanation": "The Svalbard Global Seed Vault is a vital international agricultural failsafe, housing duplicate seed samples from gene banks across the globe deep within the permafrost of Spitsbergen, Norway. Designed to withstand natural and man-made disasters, the facility operates under a \"black box\" storage model where depositing nations retain 100% legal ownership of their seeds, ensuring neutrality and confidentiality even among geopolitical rivals.",
+    "correctIndex": 0,
+    "explanation": "Situated inside a mountain tunnel on the island of Spitsbergen, Norway, the Svalbard Global Seed Vault keeps duplicate crop seeds frozen at -18°C (-0.4°F) to protect global food supplies.",
     "vaultBonus": {
-      "cueSeconds": 480,
-      "question": "Which additional aspect of Svalbard Global Seed Vault is explored later in the episode?",
+      "cueSeconds": 310,
+      "question": "Who legally owns the seeds stored inside the Svalbard Global Seed Vault?",
       "options": [
-        "Why ancient astronomers mistook it for a planetary alignment",
-        "How medieval guilds kept its formula secret for 400 years",
-        "Real-world applications and surprising physical adaptations",
-        "Why modern scientists classify it as a synthetic mineral"
+        "The countries and gene banks that deposited them",
+        "The government of Norway",
+        "The United Nations",
+        "Any visiting agricultural researcher"
       ],
-      "correctIndex": 2,
-      "explanation": "Designed to withstand natural and man-made disasters, the facility operates under a \"black box\" storage model where depositing nations retain 100% legal ownership of their seeds, ensuring neutrality and confidentiality even among geopolitical rivals. Situated inside a mountain tunnel shielded by advanced security systems and natural sub-zero rock insulation, the vault maintains active storage rooms at -18°C (-0.4°F) to preserve crop genetic diversity for future generations."
+      "correctIndex": 0,
+      "explanation": "The vault operates under a \"black box\" storage model where each depositing nation or gene bank retains 100% legal ownership and sole access to its sealed seed samples."
     }
   },
   {
@@ -137,26 +137,26 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-batteries/id1810507693?i=1000801688503&uo=4",
     "category": "Science",
     "cueSeconds": 780,
-    "question": "When you drop a standard alkaline battery onto a hard surface, what happens if the battery is depleted compared to a fresh one?",
+    "question": "What happens when you drop a dead alkaline battery onto a hard surface?",
     "options": [
-      "It lands flat with a heavy, silent thud",
-      "It bounces noticeably because zinc oxidizes into a rigid solid inside",
-      "It spins toward its negative anode terminal",
-      "It loses its magnetic polarity immediately"
+      "It lands with a flat, heavy thud",
+      "It bounces because zinc oxide hardens inside",
+      "It rolls toward its negative terminal",
+      "It feels warmer than a fresh battery"
     ],
     "correctIndex": 1,
-    "explanation": "A fresh alkaline battery contains a gel-like zinc paste that absorbs impact and lands with a dull thud. As the battery discharges, that zinc converts into solid, spring-like zinc oxide—causing a dead battery to bounce when dropped!",
+    "explanation": "A fresh alkaline battery contains a gel-like zinc paste that absorbs impact and lands with a dull thud. As the battery discharges, that zinc turns into solid, spring-like zinc oxide—causing a dead battery to bounce!",
     "vaultBonus": {
       "cueSeconds": 195,
-      "question": "Who coined the electrical term \"battery\" in 1749—decades before Alessandro Volta built the first continuous-current voltaic pile in 1800?",
+      "question": "Who coined the electrical term \"battery\" in 1749?",
       "options": [
         "Luigi Galvani",
         "Michael Faraday",
         "Benjamin Franklin",
-        "James Watt"
+        "Alessandro Volta"
       ],
       "correctIndex": 2,
-      "explanation": "Benjamin Franklin coined the term \"battery\" in 1749 to describe a linked set of Leyden jars discharging together like a military battery of cannons. Strictly speaking, single AA and AAA units are single electrochemical cells, whereas a 9-volt battery links six 1.5-volt cells together!"
+      "explanation": "Benjamin Franklin coined the term \"battery\" in 1749 to describe a linked set of Leyden jars discharging together like a military battery of cannons!"
     }
   },
   {
@@ -169,26 +169,26 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-email/id1810507693?i=1000801397499&uo=4",
     "category": "Science",
     "cueSeconds": 240,
-    "question": "When computer engineer Ray Tomlinson created networked ARPANET email in late 1971, why did he choose the \"@\" symbol for email addresses?",
+    "question": "Why did Ray Tomlinson choose the \"@\" symbol for email addresses in 1971?",
     "options": [
-      "It was the only punctuation key wired into ARPANET routers",
-      "It designated that a user was located \"at\" a specific host computer",
-      "It stood for \"Automated Transmission\" in military telegraphy",
-      "It triggered high-speed encryption on mainframe terminals"
+      "It was the only symbol supported by early modems",
+      "It showed that a user was \"at\" a specific host computer",
+      "It stood for \"Automated Transmission\"",
+      "It unlocked encryption on mainframe terminals"
     ],
     "correctIndex": 1,
-    "explanation": "Ray Tomlinson needed a character on his Model 33 Teletype keyboard that never appeared in people's names and naturally separated the user from their host machine. Reading simply as \"user at host,\" his 1971 choice of the @ symbol became an enduring icon of digital communication.",
+    "explanation": "Ray Tomlinson picked the @ key on his Teletype keyboard because it never appeared in people's names and naturally indicated that a user was located \"at\" a specific host computer.",
     "vaultBonus": {
       "cueSeconds": 585,
-      "question": "In August 1991, astronauts aboard which NASA spacecraft sent the first electronic mail message from outer space using AppleLink software?",
+      "question": "From which spacecraft did astronauts send the first email from space in 1991?",
       "options": [
         "Space Shuttle Atlantis",
         "Skylab 4",
-        "Apollo-Soyuz Test Project",
-        "Space Shuttle Endeavour"
+        "The Mir Space Station",
+        "Space Shuttle Discovery"
       ],
       "correctIndex": 0,
-      "explanation": "Crew members aboard the Space Shuttle Atlantis (STS-43) used a Macintosh Portable computer running AppleLink software in August 1991 to send the first-ever email from orbit back to Earth!"
+      "explanation": "Astronauts aboard the Space Shuttle Atlantis used a Macintosh Portable running AppleLink software in August 1991 to send the first email from orbit!"
     }
   },
   {
@@ -201,7 +201,7 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-robert-smalls/id1810507693?i=1000801167785&uo=4",
     "category": "Biographies",
     "cueSeconds": 210,
-    "question": "In May 1862, 23-year-old enslaved wheelman Robert Smalls sailed his family and crew to freedom past five Confederate checkpoints in Charleston Harbor aboard which steamer?",
+    "question": "Which ship did Robert Smalls commandeer to sail his family to freedom in 1862?",
     "options": [
       "CSS Virginia",
       "USS Monitor",
@@ -209,18 +209,18 @@
       "CSS Shenandoah"
     ],
     "correctIndex": 2,
-    "explanation": "Disguising himself in the captain's wide-brimmed straw hat and sounding the exact whistle signals at every harbor fort including Fort Sumter, Robert Smalls piloted the Confederate transport steamer CSS Planter to the Union blockade—and was later appointed captain of the ship!",
+    "explanation": "Putting on the captain's wide-brimmed straw hat and sounding the proper whistle signals at five Charleston Harbor checkpoints, Robert Smalls steered the Confederate steamer CSS Planter to the Union blockade—and later became its captain!",
     "vaultBonus": {
       "cueSeconds": 650,
-      "question": "As a delegate to South Carolina's 1868 Constitutional Convention during Reconstruction, Robert Smalls authored the resolution creating what historic statewide institution?",
+      "question": "What statewide system did Robert Smalls help create in South Carolina in 1868?",
       "options": [
-        "South Carolina's first free, compulsory public school system",
+        "The state's first free, compulsory public school system",
         "The Charleston Maritime Navigation Academy",
         "The first trans-state telegraph network",
-        "The Port Royal Freedmen's Bank and Mint"
+        "The Port Royal Naval Shipyard"
       ],
       "correctIndex": 0,
-      "explanation": "Although legally barred from learning to read as an enslaved youth, Smalls mastered literacy as an adult and championed public education—authoring the 1868 resolution that established South Carolina's first free, compulsory public school system before serving five terms in Congress."
+      "explanation": "At South Carolina's 1868 Constitutional Convention, Robert Smalls authored the resolution establishing the state's first free, compulsory public school system before serving five terms in the U.S. House of Representatives."
     }
   },
   {
@@ -233,7 +233,7 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-toast/id1810507693?i=1000800955034&uo=4",
     "category": "Foods",
     "cueSeconds": 155,
-    "question": "Which chemical process—discovered by a French physician in 1912—rearranges amino acids and simple sugars between 280°F and 330°F to give toast its golden-brown crust and aroma?",
+    "question": "What chemical reaction gives toasted bread its golden-brown crust and flavor?",
     "options": [
       "The Pasteur fermentation cycle",
       "The Maillard reaction",
@@ -241,18 +241,18 @@
       "Starch sublimation"
     ],
     "correctIndex": 1,
-    "explanation": "Named after French physician Louis-Camille Maillard, the Maillard reaction occurs when heat triggers amino acids and simple sugars to form Amadori compounds and savory aroma molecules that give toasted bread, roasted coffee, and seared foods their signature flavor.",
+    "explanation": "Discovered by French physician Louis-Camille Maillard in 1912, the Maillard reaction occurs when heat between 280°F and 330°F rearranges amino acids and simple sugars into savory aroma and flavor compounds.",
     "vaultBonus": {
       "cueSeconds": 540,
-      "question": "According to physicist Robert Matthews' famous study on why dropped toast so often lands butter-side down, what is the main reason for the flip?",
+      "question": "Why does dropped toast so often land butter-side down?",
       "options": [
-        "The weight of butter makes the top side aerodynamically heavier",
-        "Standard kitchen table heights only allow time for a single half-rotation",
-        "Warm air rising from the toast creates an inverted air pocket",
-        "Toasting shifts the slice's center of gravity toward the crust"
+        "Butter makes one side of the bread too heavy",
+        "Standard table heights only give toast time for half a flip",
+        "Warm air rising from toast flips it over",
+        "Toasting shifts weight toward the crust"
       ],
       "correctIndex": 1,
-      "explanation": "A thin layer of butter barely affects the slice's aerodynamics! Instead, as toast tips off a standard 30-inch table edge, rotational torque gives the falling slice just enough time to complete half a turn before hitting the floor."
+      "explanation": "Physicist Robert Matthews proved that as toast slides off a typical kitchen table, the height and rotational spin only give the slice time for a single half-rotation before hitting the floor!"
     }
   },
   {
@@ -265,7 +265,7 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-squid/id1810507693?i=1000800725792&uo=4",
     "category": "Animals",
     "cueSeconds": 145,
-    "question": "How many hearts does a squid possess to circulate blood through its body?",
+    "question": "How many hearts does a squid have?",
     "options": [
       "One heart",
       "Two hearts",
@@ -273,18 +273,18 @@
       "Four hearts"
     ],
     "correctIndex": 2,
-    "explanation": "Squid have three distinct hearts! Two branchial hearts pump oxygen-poor blood through the gills, while a central systemic heart circulates oxygenated, copper-based blue blood throughout the body.",
+    "explanation": "Squid have three hearts! Two branchial hearts pump blood through the gills, while a central systemic heart circulates oxygenated blue blood through the rest of the body.",
     "vaultBonus": {
       "cueSeconds": 295,
-      "question": "What unusual organ surrounds a squid's esophagus, requiring it to swallow finely ground food?",
+      "question": "Which of a squid's organs is shaped like a ring around its esophagus?",
       "options": [
-        "Its ring-shaped brain",
-        "Its ink reservoir",
-        "Its primary aorta",
-        "Its cartilage mantle"
+        "Its brain",
+        "Its ink sac",
+        "Its stomach",
+        "Its liver"
       ],
       "correctIndex": 0,
-      "explanation": "A squid's brain is donut- or ring-shaped and encircles its esophagus! Because food passes directly through the center of its brain, a squid uses its chitinous beak and radula to grind meals into tiny pieces to prevent neurological injury."
+      "explanation": "A squid's ring-shaped brain completely encircles its throat, which is why it must grind food into tiny pieces with its beak before swallowing!"
     }
   },
   {
@@ -297,7 +297,7 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-kid-inventors/id1810507693?i=1000800210849&uo=4",
     "category": "History",
     "cueSeconds": 340,
-    "question": "Which tactile reading and writing system was invented in 1824 by a 15-year-old French student determined to improve communication technology for blind readers?",
+    "question": "What reading system did 15-year-old Louis Braille invent in 1824?",
     "options": [
       "Morse code",
       "Braille",
@@ -305,18 +305,18 @@
       "Pitman shorthand"
     ],
     "correctIndex": 1,
-    "explanation": "Teenage inventor Louis Braille developed his raised six-dot reading and writing system at just 15 years old out of frustration with bulky embossed books. His breakthrough remains one of history's most enduring examples of a young mind creating life-changing assistive communication technology.",
+    "explanation": "Teenage inventor Louis Braille developed his raised six-dot reading and writing system at just 15 years old, creating one of history's most important assistive technologies.",
     "vaultBonus": {
       "cueSeconds": 685,
-      "question": "Which breakthrough in electronic image transmission was famously conceptualized by 14-year-old Philo Farnsworth after observing the parallel rows of a plowed field?",
+      "question": "What invention did 14-year-old Philo Farnsworth design after looking at a plowed field?",
       "options": [
-        "Fiber-optic cabling",
+        "Fiber-optic cables",
         "The rotary dial telephone",
         "All-electronic television",
-        "Marine radar navigation"
+        "Marine radar"
       ],
       "correctIndex": 2,
-      "explanation": "At age 14, farm teen Philo Farnsworth realized an electron beam could scan pictures line by line just like rows in a plowed field. Turning everyday observation into complex engineering, he laid the foundation for modern electronic television."
+      "explanation": "At age 14, farm teen Philo Farnsworth realized an electron beam could scan images line by line just like the parallel rows of a plowed field—laying the foundation for electronic television!"
     }
   },
   {
@@ -329,7 +329,7 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-horses/id1810507693?i=1000800004677&uo=4",
     "category": "Animals",
     "cueSeconds": 365,
-    "question": "Although James Watt defined one horsepower as lifting 33,000 foot-pounds per minute, roughly how much peak power can a single draft horse generate in a brief burst?",
+    "question": "How much peak power can a single draft horse produce in a short burst?",
     "options": [
       "Exactly 1 horsepower",
       "About 4 horsepower",
@@ -337,18 +337,18 @@
       "Over 45 horsepower"
     ],
     "correctIndex": 2,
-    "explanation": "Watt's famous horsepower metric measured sustainable work averaged over an entire workday rather than maximum athletic output. During short, explosive efforts, a powerful draft horse can actually generate close to 15 horsepower!",
+    "explanation": "James Watt's horsepower metric measured average work over a full day. In a short, explosive effort, a single draft horse can actually generate close to 15 horsepower!",
     "vaultBonus": {
       "cueSeconds": 765,
-      "question": "Why must a horse lie down on its chest or side rather than resting upright in its stay apparatus to enter rapid eye movement (REM) sleep?",
+      "question": "Why must a horse lie down to enter deep REM sleep?",
       "options": [
-        "REM sleep requires total muscle relaxation",
-        "Its nasal airways seal shut while standing",
-        "Circulation to the single-toed hoof stops upright",
-        "Its horizontal pupils cannot close while standing"
+        "REM sleep requires complete muscle relaxation",
+        "Its airways seal shut while standing still",
+        "Blood flow to its hooves stops upright",
+        "Its pupils cannot close while standing"
       ],
       "correctIndex": 0,
-      "explanation": "While a clever network of tendons and ligaments called the stay apparatus lets horses doze standing up during light slow-wave sleep, REM sleep causes complete muscle relaxation. Horses must lie down for short intervals to get that essential neurological restoration without collapsing."
+      "explanation": "While a horse's stay apparatus lets it nap standing up during light sleep, deep REM sleep causes total muscle relaxation—so a horse has to lie down briefly so it doesn't collapse."
     }
   },
   {
@@ -361,7 +361,7 @@
     "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-bioluminescence/id1810507693?i=1000799770936&uo=4",
     "category": "Science",
     "cueSeconds": 225,
-    "question": "Bioluminescence produces natural light through a chemical reaction between the compound luciferin and which catalytic enzyme?",
+    "question": "Which enzyme reacts with luciferin to create bioluminescent light?",
     "options": [
       "Amylase",
       "Catalase",
@@ -369,18 +369,18 @@
       "Luciferase"
     ],
     "correctIndex": 3,
-    "explanation": "First isolated in the late 19th century by French scientist Raphaël Dubois, luciferase acts as the enzyme catalyst that oxidizes luciferin to emit light. Roughly three-quarters of open-ocean pelagic creatures rely on glowing chemistry like this to hunt, hide, or communicate!",
+    "explanation": "First isolated by French scientist Raphaël Dubois, luciferase is the catalytic enzyme that reacts with luciferin to produce natural \"cold light\" in fireflies and deep-sea creatures.",
     "vaultBonus": {
       "cueSeconds": 755,
-      "question": "During the American Civil War, what caused the mysterious \"Angel's Glow\" that helped wounded soldiers survive battlefield infections?",
+      "question": "What caused the \"Angel's Glow\" that helped wounded Civil War soldiers heal?",
       "options": [
-        "Foxfire fungi growing on damp cotton bandages",
-        "Crushed sea fireflies mixed into field salves",
+        "Glowing fungi growing on cotton bandages",
+        "Crushed sea fireflies mixed into salves",
         "Traces of glowing phosphorus from cannon smoke",
-        "Antibiotic-secreting glowing bacteria carried by soil nematodes"
+        "Antibiotic-producing glowing bacteria in the soil"
       ],
       "correctIndex": 3,
-      "explanation": "Wounded soldiers resting on cool, muddy battlefields had their wounds colonized by tiny soil nematodes carrying bioluminescent Photorhabdus luminescens bacteria. As the microbes emitted a faint bluish glow, they also secreted natural antibiotics that fought off deadly pathogens!"
+      "explanation": "Soil nematodes on muddy Civil War battlefields carried bioluminescent Photorhabdus luminescens bacteria into wounds, emitting a soft glow while secreting natural antibiotics that prevented infection!"
     }
   },
   {

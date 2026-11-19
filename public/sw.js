@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ffd-companion-v6';
+const CACHE_NAME = 'ffd-companion-v7';
 const APP_SHELL = [
   './',
   './index.html',
