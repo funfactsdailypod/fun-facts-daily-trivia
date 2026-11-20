@@ -1,7 +1,8 @@
-import { BADGES, SHOW_CONFIG } from './config.js';
+import { BADGES, CLOUD_CONFIG, SHOW_CONFIG } from './config.js';
 
 const STORAGE_KEY = 'ffd_trivia_player_v1';
 const OVERRIDES_KEY = 'ffd_trivia_host_overrides_v1';
+const SUPABASE_OVERRIDES_CODE = 'FFDADMIN';
 
 let activeCatalogGuids = [];
 
@@ -404,7 +405,203 @@ export function loadHostOverrides() {
 
 export function saveHostOverride(guid, patch) {
   const all = loadHostOverrides();
-  all[guid] = { ...(all[guid] || {}), ...patch, updatedAt: new Date().toISOString() };
-  localStorage.setItem(OVERRIDES_KEY, JSON.stringify(all));
+  const prev = all[guid] || {};
+  const mergedVault = patch.vaultBonus
+    ? { ...(prev.vaultBonus || {}), ...patch.vaultBonus }
+    : prev.vaultBonus;
+  const nextEntry = { ...prev, ...patch, updatedAt: new Date().toISOString() };
+  if (mergedVault) nextEntry.vaultBonus = mergedVault;
+  all[guid] = nextEntry;
+  try {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(all));
+  } catch {
+    // Ignore localStorage quota
+  }
   return all;
+}
+
+export function applyEpisodeOverride(ep, patch) {
+  if (!patch) return ep;
+  const merged = { ...ep, ...patch };
+  if (patch.vaultBonus && ep.vaultBonus) {
+    merged.vaultBonus = { ...ep.vaultBonus, ...patch.vaultBonus };
+  }
+  return merged;
+}
+
+function getSupabaseRestUrl() {
+  let url = String(CLOUD_CONFIG?.supabaseUrl || '').trim();
+  if (!url) return '';
+  url = url.replace(/\/+$/, '').replace(/\/rest\/v1\/?$/, '');
+  return `${url}/rest/v1`;
+}
+
+/**
+ * Fetches global question edits saved via the secret admin page (from Supabase, local server API, and localStorage).
+ */
+export async function fetchGlobalOverrides() {
+  const local = loadHostOverrides();
+  let remote = {};
+
+  const endpoint = getSupabaseRestUrl();
+  if (endpoint && CLOUD_CONFIG?.supabaseAnonKey && typeof fetch !== 'undefined') {
+    try {
+      const res = await fetch(
+        `${endpoint}/group_rooms?code=eq.${SUPABASE_OVERRIDES_CODE}&select=state`,
+        {
+          headers: {
+            apikey: CLOUD_CONFIG.supabaseAnonKey,
+            Authorization: `Bearer ${CLOUD_CONFIG.supabaseAnonKey}`
+          },
+          cache: 'no-store'
+        }
+      );
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows[0]?.state?.overrides) {
+          remote = rows[0].state.overrides;
+        }
+      }
+    } catch {
+      // Fallback to local API / localStorage
+    }
+  }
+
+  if (Object.keys(remote).length === 0 && typeof fetch !== 'undefined') {
+    try {
+      const res = await fetch('/api/overrides', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.overrides && typeof data.overrides === 'object') {
+          remote = data.overrides;
+        }
+      }
+    } catch {
+      // Offline / static host without local Ruby API
+    }
+  }
+
+  const combined = { ...local };
+  for (const [guid, rPatch] of Object.entries(remote)) {
+    const lPatch = combined[guid];
+    if (!lPatch || String(rPatch.updatedAt || '') >= String(lPatch.updatedAt || '')) {
+      combined[guid] = rPatch;
+    }
+  }
+
+  try {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(combined));
+  } catch {
+    // Ignore storage error
+  }
+  return combined;
+}
+
+/**
+ * Saves an episode question override both locally and globally to Supabase (so all players see the edit live).
+ */
+export async function saveGlobalOverride(guid, patch) {
+  const latestAll = await fetchGlobalOverrides().catch(() => loadHostOverrides());
+  const prev = latestAll[guid] || {};
+  const mergedVault = patch.vaultBonus
+    ? { ...(prev.vaultBonus || {}), ...patch.vaultBonus }
+    : prev.vaultBonus;
+  const nextEntry = { ...prev, ...patch, updatedAt: new Date().toISOString() };
+  if (mergedVault) nextEntry.vaultBonus = mergedVault;
+  latestAll[guid] = nextEntry;
+
+  try {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(latestAll));
+  } catch {
+    // Ignore
+  }
+
+  let syncedCloud = false;
+  const endpoint = getSupabaseRestUrl();
+  if (endpoint && CLOUD_CONFIG?.supabaseAnonKey && typeof fetch !== 'undefined') {
+    try {
+      const nowIso = new Date().toISOString();
+      const res = await fetch(`${endpoint}/group_rooms`, {
+        method: 'POST',
+        headers: {
+          apikey: CLOUD_CONFIG.supabaseAnonKey,
+          Authorization: `Bearer ${CLOUD_CONFIG.supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify({
+          code: SUPABASE_OVERRIDES_CODE,
+          expires_at: '2099-12-31T23:59:59.000Z',
+          state: { overrides: latestAll, updatedAt: nowIso },
+          updated_at: nowIso
+        })
+      });
+      if (res.ok) syncedCloud = true;
+    } catch {
+      // Ignore network hiccup
+    }
+  }
+
+  if (typeof fetch !== 'undefined') {
+    try {
+      await fetch('/api/overrides', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ overrides: latestAll })
+      });
+    } catch {
+      // Optional local server endpoint
+    }
+  }
+
+  return { overrides: latestAll, syncedCloud };
+}
+
+export async function deleteGlobalOverride(guid) {
+  const latestAll = await fetchGlobalOverrides().catch(() => loadHostOverrides());
+  delete latestAll[guid];
+
+  try {
+    localStorage.setItem(OVERRIDES_KEY, JSON.stringify(latestAll));
+  } catch {
+    // Ignore
+  }
+
+  const endpoint = getSupabaseRestUrl();
+  if (endpoint && CLOUD_CONFIG?.supabaseAnonKey && typeof fetch !== 'undefined') {
+    try {
+      const nowIso = new Date().toISOString();
+      await fetch(`${endpoint}/group_rooms`, {
+        method: 'POST',
+        headers: {
+          apikey: CLOUD_CONFIG.supabaseAnonKey,
+          Authorization: `Bearer ${CLOUD_CONFIG.supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=representation'
+        },
+        body: JSON.stringify({
+          code: SUPABASE_OVERRIDES_CODE,
+          expires_at: '2099-12-31T23:59:59.000Z',
+          state: { overrides: latestAll, updatedAt: nowIso },
+          updated_at: nowIso
+        })
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  if (typeof fetch !== 'undefined') {
+    try {
+      await fetch('/api/overrides', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ overrides: latestAll })
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
+  return latestAll;
 }

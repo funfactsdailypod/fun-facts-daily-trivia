@@ -52,17 +52,42 @@ function cleanDescription(html) {
     .replace(/<[^>]+>/g, ' ')
     .replace(/&nbsp;/g, ' ')
     .replace(/&amp;/g, '&')
-    .replace(/&#39;/g, "'")
-    .replace(/&rsquo;/g, "'")
+    .replace(/&#39;|&rsquo;/g, "'")
     .replace(/&ldquo;|&rdquo;|&quot;/g, '"')
     .replace(/\u2060/g, '')
     .replace(/\s+/g, ' ')
+    .replace(/\s*If you are interested in waking up to your favorite podcast[\s\S]*$/i, '')
     .replace(/\s*Listen Ad-Free on Patreon[\s\S]*$/i, '')
-    .replace(/\s*More to explore:[\s\S]*$/i, '')
+    .replace(/\s*More(?: episodes)? to explore:[\s\S]*$/i, '')
+    .replace(/\s*Related Episodes:[\s\S]*$/i, '')
     .replace(/\s*Want to learn more\? Head over to my website[\s\S]*$/i, '')
     .replace(/\s*The image used in the episode cover art[\s\S]*$/i, '')
     .replace(/\s*Fun Facts Daily is an Airwave Media Podcast[\s\S]*$/i, '')
     .trim();
+}
+
+export function splitIntoCleanSentences(text) {
+  const protectedText = String(text || '')
+    .replace(/\ba\.m\./gi, 'a__m__')
+    .replace(/\bp\.m\./gi, 'p__m__')
+    .replace(/\bU\.S\./g, 'U__S__')
+    .replace(/\b(Dr|Mr|Mrs|Ms|St|Jr|Sr|vs|etc)\./gi, '$1__DOT__');
+
+  return protectedText
+    .split(/(?<=[.?!])\s+/)
+    .map((s) =>
+      s
+        .replace(/a__m__/gi, 'a.m.')
+        .replace(/p__m__/gi, 'p.m.')
+        .replace(/U__S__/g, 'U.S.')
+        .replace(/__DOT__/g, '.')
+        .trim()
+    )
+    .filter(
+      (s) =>
+        s.length > 25 &&
+        !/patreon|airwave|megaphone|who arted|art smart|rainbow puppy|advertising@|alarmcast/i.test(s)
+    );
 }
 
 async function fetchAppleEpisodeLinks() {
@@ -139,7 +164,6 @@ export function classifyEpisodeCategory(title, description) {
   const titleLower = String(title || '').toLowerCase();
   const fullText = `${titleLower} ${String(description || '').toLowerCase()}`;
 
-  // Check title first for strong topical signal, using strict word boundaries (\b)
   const rules = [
     {
       cat: 'Foods',
@@ -147,7 +171,7 @@ export function classifyEpisodeCategory(title, description) {
     },
     {
       cat: 'Animals',
-      re: /\b(animal|animals|creature|species|squid|octopus|shark|horse|horses|equine|dog|dogs|cat|cats|bird|birds|whale|whales|insect|insects|reptile|mammal|dinosaur|mollusk|wildlife|predator|prey|zoology)\b/i
+      re: /\b(animal|animals|creature|species|zebra|zebras|squid|octopus|shark|horse|horses|equine|dog|dogs|cat|cats|bird|birds|whale|whales|insect|insects|reptile|mammal|dinosaur|mollusk|wildlife|predator|prey|zoology)\b/i
     },
     {
       cat: 'Biographies',
@@ -155,7 +179,7 @@ export function classifyEpisodeCategory(title, description) {
     },
     {
       cat: 'Art',
-      re: /\b(art|artist|painting|painter|sculpture|sculptor|museum|gallery|architecture|architect|fresco|canvas|pigment|renaissance|impressionism)\b/i
+      re: /\b(impressionism|impressionist|art|artist|painting|painter|sculpture|sculptor|museum|gallery|architecture|architect|fresco|canvas|pigment|renaissance)\b/i
     },
     {
       cat: 'Geography',
@@ -171,7 +195,7 @@ export function classifyEpisodeCategory(title, description) {
     },
     {
       cat: 'History',
-      re: /\b(history|historical|civil war|world war|ancient|medieval|empire|revolution|colonial|century|dynasty|treaty|election|salem|archaeology)\b/i
+      re: /\b(clock|clocks|sundial|timekeeping|history|historical|civil war|world war|ancient|medieval|empire|revolution|colonial|century|dynasty|treaty|election|salem|archaeology)\b/i
     }
   ];
 
@@ -192,7 +216,7 @@ export function classifyEpisodeCategory(title, description) {
   return bestCat;
 }
 
-function validateGeneratedTrivia(parsed) {
+export function validateGeneratedTrivia(parsed) {
   if (!parsed || typeof parsed !== 'object') return false;
   const checkQ = (qObj) => {
     if (!qObj || typeof qObj.question !== 'string') return false;
@@ -200,8 +224,17 @@ function validateGeneratedTrivia(parsed) {
     if (q.length < 15 || q.length > 130) return false;
     if (/^(regarding|according to the episode|in the episode on|in the history of)\b/i.test(q)) return false;
     if (/which of the following is true/i.test(q)) return false;
+    if (/what (?:key feature|primary characteristic|else do we learn|additional aspect)/i.test(q)) return false;
     if (!Array.isArray(qObj.options) || qObj.options.length !== 4) return false;
-    if (qObj.options.some((o) => typeof o !== 'string' || o.trim().length < 2 || o.trim().endsWith('...'))) {
+    if (
+      qObj.options.some(
+        (o) =>
+          typeof o !== 'string' ||
+          o.trim().length < 2 ||
+          o.trim().endsWith('...') ||
+          /specialized structure and (?:real-world|historical)|surprising scientific discoveries/i.test(o)
+      )
+    ) {
       return false;
     }
     if (![0, 1, 2, 3].includes(Number(qObj.correctIndex))) return false;
@@ -212,44 +245,48 @@ function validateGeneratedTrivia(parsed) {
 }
 
 async function generateTriviaWithGemini(episode, apiKey) {
-  const prompt = `You write clear, concise, natural, family-friendly multiple-choice trivia questions for listeners of the daily podcast "Fun Facts Daily" hosted by Kyle Wood.
+  const prompt = `You write concrete, specific, curiosity-piquing multiple-choice trivia questions for listeners of the daily podcast "Fun Facts Daily" hosted by Kyle Wood.
 
-Match the exact clear, conversational, and concise phrasing of these examples (notice how every question is a direct 5-to-14-word question without any long introductory clauses):
+Match the exact clear, specific, and curiosity-sparking phrasing of these examples:
 
-Example 1 (Fun Facts About Impressionism):
+Example 1 (Fun Facts About Clocks):
+- Question: "The first alarm clock in America was set to ring at what time?"
+- Options: ["4:00 a.m.", "5:30 a.m.", "6:00 a.m.", "7:00 a.m."]
+- CorrectIndex: 0
+- Explanation: "New Hampshire clockmaker Levi Hutchins built America's first mechanical alarm clock in 1787 with a single fixed pin so it could only ever ring at 4:00 a.m.—the exact time he wanted to wake up for work!"
+
+Example 2 (Fun Facts About Clocks - Bonus):
+- Question: "A medieval 'moment' was officially defined as what length of time?"
+- Options: ["15 seconds", "90 seconds", "3 minutes", "10 minutes"]
+- CorrectIndex: 1
+- Explanation: "In medieval timekeeping, an hour was divided into 40 'moments' based on the movement of a sundial shadow—making a single moment officially equal to 90 seconds!"
+
+Example 3 (Fun Facts About Impressionism):
 - Question: "Who coined the term Impressionist?"
 - Options: ["Art critic Louis Leroy", "Painter Claude Monet", "Patron Gustave Caillebotte", "Artist Mary Cassatt"]
 - CorrectIndex: 0
-- Explanation: "French art critic Louis Leroy coined the term as an insult in his 1874 review mocking Claude Monet's painting Impression, Sunrise for looking like an unfinished sketch. Instead of rejecting the label, the artists proudly adopted it!"
+- Explanation: "French art critic Louis Leroy coined the term as an insult in his 1874 review mocking Claude Monet's painting Impression, Sunrise for looking like an unfinished sketch—and the artists proudly adopted it!"
 
-Example 2 (Fun Facts About Zebras):
+Example 4 (Fun Facts About Zebras):
 - Question: "How do a zebra's stripes help them?"
 - Options: ["They camouflage zebras in tall grass from lions", "They confuse biting horseflies so the insects cannot land", "They absorb sunlight to warm the zebra at night", "They signal social rank within the herd"]
 - CorrectIndex: 1
-- Explanation: "Lions cannot even distinguish zebra stripes from more than 164 feet away! Instead, a zebra's high-contrast stripes act as an optical defense that scrambles the flight vision of biting horseflies, causing the insects to miss their landing."
+- Explanation: "Lions cannot even distinguish zebra stripes from more than 164 feet away! Instead, a zebra's high-contrast stripes act as an optical defense that scrambles the flight vision of biting horseflies."
 
-Example 3 (Fun Facts About Your Nervous System):
+Example 5 (Fun Facts About Your Nervous System):
 - Question: "How fast can nerve signals travel if the neurons have a myelin sheath?"
 - Options: ["Up to 25 miles per hour", "Up to 100 miles per hour", "Up to 268 miles per hour", "Up to 500 miles per hour"]
 - CorrectIndex: 2
-- Explanation: "Insulated by a protective myelin sheath, alpha motor neurons can transmit electrical impulses at speeds up to 268 miles per hour! Unmyelinated pain fibers, by contrast, travel at a small fraction of that speed."
+- Explanation: "Insulated by a protective myelin sheath, alpha motor neurons can transmit electrical impulses at speeds up to 268 miles per hour!"
 
-Example 4 (Fun Facts About Squid):
-- Question: "How many hearts does a squid have?"
-- Options: ["One heart", "Two hearts", "Three hearts", "Four hearts"]
-- CorrectIndex: 2
-- Explanation: "Squid have three hearts! Two branchial hearts pump blood through the gills, while a central systemic heart circulates oxygenated blue blood through the rest of the body."
+STRICT RULES:
+1. NEVER write vague questions like "What key feature is highlighted in this episode?" or "What do we learn about X?".
+2. Every question MUST test a CONCRETE, SPECIFIC, CURIOSITY-PIQUING fact (an exact number, time, measurement, person, invention, place, animal adaptation, or historical surprise).
+3. Keep every question SHORT, CLEAR, DIRECT, and NATURAL (5 to 14 words long, maximum 110 characters).
+4. All 4 options MUST be concrete, concise (1 to 8 words each), grammatically parallel, and NEVER truncated with "...".
+5. Vary "correctIndex" naturally across 0, 1, 2, and 3.
+6. "vaultBonus" MUST be an equally concrete, specific question testing a DIFFERENT fact from the episode.
 
-STRICT QUESTION PHRASING RULES:
-1. Keep every question SHORT, CLEAR, DIRECT, and NATURAL (5 to 14 words long, maximum 110 characters).
-2. NEVER start a question with clunky preambles like "Regarding...", "According to the episode...", "In the episode on...", "Although...", or "While...".
-3. Start directly with a simple question word ("Who...", "What...", "How...", "How many...", "How fast...", "Where...", "Why...", "Which...", "When...").
-4. NEVER copy-paste a long sentence from the show notes with a blank in the middle. Write a fresh, simple, conversational question that a human trivia host would ask out loud.
-5. All 4 options MUST be concise (2 to 9 words each), grammatically parallel, plausible, and NEVER truncated with "...".
-6. Vary "correctIndex" naturally across 0, 1, 2, and 3.
-7. "vaultBonus" MUST be an equally short, clear question testing a DIFFERENT fact from the episode.
-
-Now write the Daily Double question and Weekend Vault Bonus question for this episode:
 Episode Title: ${episode.title}
 Episode Duration: ${episode.durationSec} seconds
 Episode Show Notes:
@@ -259,13 +296,13 @@ Return a single JSON object matching this exact structure:
 {
   "category": "<strictly one of: ${ALLOWED_CATEGORIES.join(' | ')}>",
   "cueSeconds": <integer timestamp in seconds between 120 and 450>,
-  "question": "<short, clear, natural 5-to-14-word question>",
+  "question": "<short, concrete, curiosity-piquing 5-to-14-word question>",
   "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"],
   "correctIndex": <0, 1, 2, or 3>,
-  "explanation": "<2 warm, upbeat sentences explaining the correct answer>",
+  "explanation": "<2 warm, upbeat sentences explaining the concrete fact>",
   "vaultBonus": {
     "cueSeconds": <integer timestamp in seconds between 450 and 800>,
-    "question": "<short, clear, natural 5-to-14-word question testing a DIFFERENT fact>",
+    "question": "<short, concrete, curiosity-piquing 5-to-14-word question testing a DIFFERENT fact>",
     "options": ["<Option A>", "<Option B>", "<Option C>", "<Option D>"],
     "correctIndex": <0, 1, 2, or 3>,
     "explanation": "<2 warm sentences explaining the second fact>"
@@ -308,7 +345,7 @@ Return a single JSON object matching this exact structure:
         parsed.category = classifyEpisodeCategory(episode.title, episode.description);
       }
       if (!validateGeneratedTrivia(parsed)) {
-        throw new Error(`${model} returned JSON that did not pass quality validation`);
+        throw new Error(`${model} returned JSON that did not pass strict specificity validation`);
       }
       return parsed;
     } catch (err) {
@@ -333,24 +370,15 @@ function deterministicShuffle(correctOption, distractors, seedStr) {
 }
 
 /**
- * Concise Natural Question Generator (used if GEMINI_API_KEY is not configured).
- * Never masks or pastes long show-notes sentences; always builds short, direct 5-to-13-word questions.
+ * Concrete Fact-Mining Question Generator (used if GEMINI_API_KEY is not configured).
+ * Always extracts concrete numbers, times, dates, people, places, and specific mechanisms—never vague placeholders!
  */
 export function buildCraftedTriviaFromNotes(episode) {
   const desc = episode.description || '';
   const topic = episode.title.replace(/^Fun Facts About (the |Your )?/i, '').trim();
   const topicLower = topic.toLowerCase();
   const category = classifyEpisodeCategory(episode.title, desc);
-
-  const sentences = desc
-    .split(/(?<=[.?!])\s+/)
-    .map((s) => s.trim())
-    .filter(
-      (s) =>
-        s.length > 30 &&
-        !/patreon|airwave|megaphone|who arted|art smart|rainbow puppy|advertising@|related episodes/i.test(s)
-    );
-
+  const sentences = splitIntoCleanSentences(desc);
   const candidates = [];
 
   for (let i = 0; i < sentences.length; i++) {
@@ -358,14 +386,41 @@ export function buildCraftedTriviaFromNotes(episode) {
     const nextS = sentences[i + 1] || '';
     const explanation = nextS ? `${s} ${nextS}` : `${s} Listen to the episode to discover even more about ${topic}!`;
 
-    // 1. Coined / Originated term or moniker ("Who coined...?")
+    // 1. Time of day (e.g. "4:00 a.m. alarm clock")
+    const timeMatch = s.match(/\b(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))\s+([a-z]+(?:\s+[a-z]+){0,2})/i);
+    if (timeMatch) {
+      const timeVal = timeMatch[1].trim();
+      const whatObj = timeMatch[2].trim();
+      candidates.push({
+        type: 'clock_time',
+        question: `The first ${whatObj} mentioned in this episode was set to what time?`,
+        correct: timeVal,
+        distractors: ['5:30 a.m.', '6:00 a.m.', '7:30 a.m.'].filter((t) => t !== timeVal),
+        explanation
+      });
+    }
+
+    // 2. Regulated with / powered by / relies on concrete object ("regulated with pre-decimal pennies")
+    const regMatch = s.match(/\b(?:regulated with|powered by|fueled by|adjusted with)\s+([a-z0-9-]+(?:\s+[a-z0-9-]+){1,3})\b/i);
+    if (regMatch) {
+      const item = regMatch[1].trim();
+      candidates.push({
+        type: 'regulated',
+        question: `What surprising item is used to regulate or power the mechanism in ${topic}?`,
+        correct: item.charAt(0).toUpperCase() + item.slice(1),
+        distractors: ['Weighted brass marbles', 'Liquid mercury drops', 'Pure quartz pebbles'],
+        explanation
+      });
+    }
+
+    // 3. Coined / Originated term or moniker ("Who coined...?")
     const coinedMatch = s.match(
-      /\b(?:moniker|term|name|word)\b[^.]{0,45}?\b(?:originated|coined)[^.]{0,35}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i
+      /\b(?:moniker|term|name|word)\b[^.]{0,55}?\b(?:originated|coined)[^.]{0,40}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i
     );
     if (coinedMatch) {
       const person = coinedMatch[1].trim();
       candidates.push({
-        type: 'person',
+        type: 'coined',
         question: `Who coined the name for ${topic}?`,
         correct: person,
         distractors: ['Humphry Davy', 'Alexander von Humboldt', 'Joseph Priestley'],
@@ -373,30 +428,30 @@ export function buildCraftedTriviaFromNotes(episode) {
       });
     }
 
-    // 2. Inventor / Discoverer ("Who invented / discovered X?")
+    // 4. Possessive or direct Inventor / Discoverer ("Levi Hutchins's 1787 4:00 a.m. alarm clock", "John Goffe Rand's 1841 invention of...")
     const invMatch = s.match(
-      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+invention\s+of|\s+(?:invented|discovered|created|developed|isolated))\s+(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/
+      /\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+(?:invention\s+of\s+|(?:\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.)\s+)?)?|\s+(?:invented|discovered|created|developed|isolated|patented)\s+)(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/
     );
-    if (invMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/.test(invMatch[1])) {
+    if (invMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War|Northern Hemisphere|Great Clock|Elizabeth Tower|New Zealand)/.test(invMatch[1])) {
       const person = invMatch[1].trim();
       const obj = invMatch[2].replace(/[.,;:]$/, '').trim();
       candidates.push({
         type: 'inventor',
-        question: `Who invented or discovered the ${obj}?`,
+        question: `Who created or patented the ${obj}?`,
         correct: person,
         distractors: ['Michael Faraday', 'Thomas Edison', 'Antoine Lavoisier'],
         explanation
       });
     }
 
-    // 3. Speed ("How fast...?")
+    // 5. Speed ("How fast...?")
     const speedMatch = s.match(/\b(?:speeds?\s+(?:of\s+|up to\s+|reaching\s+)?|travel(?:ing)?\s+(?:at\s+|up to\s+)?)(\d+(?:,\d+)?\s+miles per hour)\b/i);
     if (speedMatch) {
       const spd = speedMatch[1].trim();
       const numVal = parseInt(spd, 10) || 100;
       candidates.push({
         type: 'speed',
-        question: `What top speed is highlighted in the episode on ${topic}?`,
+        question: `How fast can signals or movement in ${topicLower} travel?`,
         correct: `Up to ${spd}`,
         distractors: [
           `Up to ${Math.max(5, Math.round(numVal * 0.15))} miles per hour`,
@@ -407,35 +462,35 @@ export function buildCraftedTriviaFromNotes(episode) {
       });
     }
 
-    // 4. Function / Defense / Purpose ("How do X help...?")
+    // 6. Function / Defense / Purpose ("How do X help...?")
     const funcMatch = s.match(
-      /\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as)\s+(?:an?\s+)?([^,.;()]{10,52})/i
+      /\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as|adopted\s+a\s+[a-z-\s]+to\s+mirror)\s+(?:an?\s+|the\s+)?([^,.;()]{10,55})/i
     );
     if (funcMatch) {
       const role = funcMatch[1].trim();
       const cleanRole = role.charAt(0).toUpperCase() + role.slice(1);
       candidates.push({
         type: 'function',
-        question: `What special role or defense is described in the episode on ${topic}?`,
+        question: `What specific purpose or natural pattern is explained in the episode on ${topic}?`,
         correct: cleanRole,
         distractors: [
           'Camouflaging against large predators in tall grass',
           'Absorbing solar heat to stay warm overnight',
-          'Signaling social rank to rival herds'
+          'Signaling social rank to rival groups'
         ],
         explanation
       });
     }
 
-    // 5. Named scientific or historical term ("What is the term for...?")
+    // 7. Named scientific or historical term ("What is the term for...?")
     const termMatch = s.match(
-      /\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i
+      /\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus|model)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i
     );
     if (termMatch) {
       const term = termMatch[1].replace(/[.,;:"”]$/, '').trim();
       candidates.push({
         type: 'term',
-        question: `Which specialized process or system is central to ${topicLower}?`,
+        question: `Which specific process or system is central to ${topicLower}?`,
         correct: term.charAt(0).toUpperCase() + term.slice(1),
         distractors: [
           'The Kelvin-Helmholtz cascade',
@@ -446,7 +501,7 @@ export function buildCraftedTriviaFromNotes(episode) {
       });
     }
 
-    // 6. Location ("Where is X located?")
+    // 8. Location ("Where is X located?")
     const locMatch = s.match(
       /\b(?:located|situated|permafrost|island)\s+(?:deep\s+)?(?:in|within|beneath|on|of)\s+([A-Z][A-Za-z]+(?:,?\s+[A-Z][A-Za-z]+){0,2})/
     );
@@ -461,52 +516,63 @@ export function buildCraftedTriviaFromNotes(episode) {
       });
     }
 
-    // 7. Count ("How many X does Y have?")
-    const countMatch = s.match(
-      /\b(?:features?|possess(?:es)?|has|have|contains?)\s+(?:roughly\s+|nearly\s+|over\s+)?(\d+(?:,\d+)?(?:\s+million|\s+billion)?|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+([a-z]+(?:\s+[a-z]+)?)\b/i
+    // 9. Concrete Number + Noun (e.g. "four North American standard time zones", "90-minute sleep cycles", "three hearts")
+    const numNounMatch = s.match(
+      /\b(\d+(?:,\d+)+|\d+-(?:second|minute|hour|day|foot|inch|year)|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|forty|fifty|hundred)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+){0,2})\b/
     );
-    if (countMatch && !/^(years|days|hours|minutes|seconds|feet|inches|miles|meters|percent)/i.test(countMatch[2])) {
-      const qty = countMatch[1].trim();
-      const noun = countMatch[2].trim();
+    if (
+      numNounMatch &&
+      !/^(century|centuries|years|days|people|times|first|second)\b/i.test(numNounMatch[2])
+    ) {
+      const qty = numNounMatch[1].trim();
+      const noun = numNounMatch[2].replace(/[.,;:]$/, '').trim();
       candidates.push({
-        type: 'count',
-        question: `How many ${noun} are featured in ${topicLower}?`,
+        type: 'num_noun',
+        question: `What specific quantity of ${noun.toLowerCase()} is noted in the episode on ${topic}?`,
         correct: `${qty.charAt(0).toUpperCase() + qty.slice(1)} ${noun}`,
-        distractors: [`One ${noun.replace(/s$/, '')}`, `Fourteen ${noun}`, `Fifty ${noun}`],
+        distractors: [`Single ${noun.replace(/s$/, '')}`, `Seventeen ${noun}`, `Over 400 ${noun}`],
+        explanation
+      });
+    }
+
+    // 10. Specific Year + Event ("In 1883...", "1787...")
+    const yearMatch = s.match(/\b(1[5-9]\d\d|20[0-2]\d)\b/);
+    if (yearMatch) {
+      const yr = Number(yearMatch[1]);
+      candidates.push({
+        type: 'year',
+        question: `In what year did a key historical milestone in ${topicLower} take place?`,
+        correct: String(yr),
+        distractors: [String(yr - 24), String(yr + 19), String(yr + 42)],
         explanation
       });
     }
   }
 
-  if (candidates.length < 2) {
-    const s0 = sentences[0] || `${topic} has a rich scientific and cultural history.`;
-    const s1 = sentences[1] || s0;
+  // Universal Concrete Fact Fallback (if fewer than 2 candidates matched above, extract proper nouns from sentences)
+  for (let i = 0; i < sentences.length && candidates.length < 2; i++) {
+    const s = sentences[i];
+    const properMatches = s.match(/\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,2})\b/g) || [];
+    const filtered = properMatches.filter(
+      (w) => !/^(From|Early|Practical|Precision|Beyond|Meanwhile|While|Although|Because|Fun|Facts|Daily)/.test(w)
+    );
+    const targetNoun = filtered[0] || topic;
     candidates.push({
-      type: 'general1',
-      question: `What key feature is highlighted in the episode about ${topic}?`,
-      correct: 'Its specialized structure and real-world adaptations',
-      distractors: [
-        'Its complete reliance on sub-zero polar temperatures',
-        'Its accidental ban across nineteenth-century trade',
-        'Its inability to function outside laboratory vacuum chambers'
-      ],
-      explanation: `${s0} ${s1}`
-    });
-    candidates.push({
-      type: 'general2',
-      question: `What else do we learn about ${topic} in this episode?`,
-      correct: 'Surprising scientific discoveries and historical milestones',
-      distractors: [
-        'Why ancient astronomers mistook it for a comet',
-        'How medieval guilds hid its formula for 400 years',
-        'Why modern geologists classify it as a rare gemstone'
-      ],
-      explanation: `${sentences.slice(1, 3).join(' ') || s0}`
+      type: `proper_${i}`,
+      question: `Which notable example or milestone is featured in the episode on ${topic}?`,
+      correct: targetNoun,
+      distractors: ['The Royal Greenwich Meridian', 'The Archimedes Water Screw', 'The Antikythera Astrolabe'].filter(
+        (d) => d !== targetNoun
+      ),
+      explanation: s
     });
   }
 
   const primary = candidates[0];
-  const secondary = candidates.find((c, idx) => idx > 0 && c.type !== primary.type) || candidates[1];
+  const secondary =
+    candidates.find((c, idx) => idx > 0 && c.type !== primary.type && c.correct !== primary.correct) ||
+    candidates[1] ||
+    candidates[0];
 
   const q1Shuffle = deterministicShuffle(primary.correct, primary.distractors, `${episode.guid}_main`);
   const q2Shuffle = deterministicShuffle(secondary.correct, secondary.distractors, `${episode.guid}_vault`);
@@ -585,7 +651,7 @@ async function main() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     console.warn(
-      'GEMINI_API_KEY not found in environment. Using Smart Fact-Mining Generator on episode show notes.'
+      'GEMINI_API_KEY not found in environment. Using Concrete Fact-Mining Generator on episode show notes.'
     );
   }
 
@@ -598,7 +664,7 @@ async function main() {
       try {
         trivia = await generateTriviaWithGemini(ep, apiKey);
       } catch (err) {
-        console.warn(`Gemini API generation failed (${err.message}). Using Smart Fact-Mining Generator.`);
+        console.warn(`Gemini API generation failed (${err.message}). Using Concrete Fact-Mining Generator.`);
       }
     }
     if (!trivia) {

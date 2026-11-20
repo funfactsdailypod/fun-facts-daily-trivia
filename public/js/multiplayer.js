@@ -294,10 +294,10 @@ export class GroupGameService {
         suggestedCode: await this.generateUniqueCode()
       };
     }
-    if (!isFamilyFriendlyText(code)) {
+    if (!isFamilyFriendlyText(code) || code === 'FFDADMIN') {
       return {
         available: false,
-        reason: 'Please choose a family-friendly game code.',
+        reason: 'Please choose a different game code.',
         suggestedCode: await this.generateUniqueCode()
       };
     }

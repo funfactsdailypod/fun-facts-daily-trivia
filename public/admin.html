@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Fun Facts Daily — Private Question Editor</title>
+  <link rel="icon" type="image/png" sizes="64x64" href="./icons/favicon-64.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Space+Mono:wght@700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./css/styles.css" />
+  <style>
+    .admin-shell {
+      position: relative;
+      z-index: 10;
+      max-width: 960px;
+      margin: 32px auto 64px;
+      padding: 0 20px;
+    }
+    .admin-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+    .admin-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .admin-brand img {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      border: var(--border-med);
+      box-shadow: var(--shadow-sm);
+    }
+    .admin-brand h1 {
+      font-family: var(--font-display);
+      font-size: 1.55rem;
+      margin: 0;
+    }
+    .admin-brand span {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--brand-orange-deep);
+    }
+    .admin-login-card {
+      max-width: 480px;
+      margin: 48px auto;
+    }
+    .password-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .current-preview-box {
+      background: var(--surface-soft);
+      border: 2.5px solid var(--ink);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      margin: 16px 0 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .preview-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--ink-muted);
+    }
+    .preview-question-box {
+      background: var(--surface);
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+    .preview-question-box:hover {
+      background: #fff4c2;
+    }
+    .preview-lbl {
+      display: block;
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--ink-muted);
+      margin-bottom: 4px;
+    }
+    .preview-q-text {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.35;
+    }
+    .preview-options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 640px) {
+      .preview-options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .preview-opt-item {
+      background: var(--surface);
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-md);
+      padding: 10px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.93rem;
+      cursor: pointer;
+      transition: background-color 0.12s ease;
+    }
+    .preview-opt-item:hover {
+      background: #fff4c2;
+    }
+    .preview-opt-item.is-correct {
+      background: var(--success-bg);
+      border-color: var(--ink);
+    }
+    .correct-tag {
+      background: var(--success-accent);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .preview-exp-box {
+      background: var(--surface);
+      border: 2px dashed var(--ink);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      cursor: pointer;
+    }
+    .preview-exp-box:hover {
+      background: #fff4c2;
+    }
+    .field-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+      gap: 10px;
+      margin: 12px 0 20px;
+    }
+    .field-check-pill {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      background: var(--surface);
+      border: 2px solid var(--ink);
+      border-radius: var(--radius-md);
+      padding: 10px 13px;
+      font-weight: 800;
+      font-size: 0.88rem;
+      cursor: pointer;
+      user-select: none;
+      box-shadow: 2px 2px 0 var(--ink);
+      transition: background-color 0.12s ease, transform 0.1s ease;
+    }
+    .field-check-pill:hover {
+      background: var(--surface-soft);
+    }
+    .field-check-pill.is-checked {
+      background: var(--brand-yellow);
+    }
+    .field-check-pill input {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--brand-orange-deep);
+      cursor: pointer;
+    }
+    .edit-fields-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 18px 0;
+      padding: 18px;
+      background: #fffdf7;
+      border: 2.5px solid var(--ink);
+      border-radius: var(--radius-lg);
+    }
+    .edit-field-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .status-banner {
+      margin-top: 14px;
+      padding: 13px 16px;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--ink);
+      font-weight: 800;
+      font-size: 0.94rem;
+    }
+    .status-banner--ok {
+      background: var(--success-bg);
+      color: #065f46;
+    }
+    .status-banner--err {
+      background: var(--wrong-bg);
+      color: var(--wrong-accent);
+    }
+    .ep-selector-layout {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 720px) {
+      .ep-selector-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wallpaper-fixed-bg" aria-hidden="true"></div>
+  <div class="memphis-bg" aria-hidden="true">
+    <span class="drift-shape drift-shape--1"></span>
+    <span class="drift-shape drift-shape--2"></span>
+    <span class="drift-shape drift-shape--5"></span>
+    <span class="drift-shape drift-shape--7"></span>
+  </div>
+
+  <div class="admin-shell">
+    <div class="admin-topbar">
+      <div class="admin-brand">
+        <img src="./icons/logo-192.png" alt="Fun Facts Daily Logo" width="52" height="52" />
+        <div>
+          <span>PRIVATE HOST TOOL</span>
+          <h1>Fun Facts Daily — Question Editor</h1>
+        </div>
+      </div>
+      <div id="admin-top-actions" hidden>
+        <button type="button" class="secondary-cta-btn" id="btn-download-full-json" title="Download complete questions.json with all edits included">
+          ⬇ Download questions.json
+        </button>
+        <button type="button" class="chip-link-btn" id="btn-admin-logout">
+          🔒 Lock Editor
+        </button>
+      </div>
+    </div>
+
+    <!-- ==========================================
+         SCREEN 1: PASSWORD LOGIN GATE
+         ========================================== -->
+    <section class="memphis-card admin-login-card" id="admin-login-screen">
+      <h2 style="font-family:var(--font-display);margin-top:0">🔐 Enter Host Login Code</h2>
+      <p style="color:var(--ink-muted);font-size:0.93rem;line-height:1.5">
+        Enter your saved administrator password to view and edit Daily Double and archive trivia questions.
+      </p>
+
+      <form id="admin-login-form">
+        <label class="field-label" for="admin-password-input">Administrator Password</label>
+        <div class="password-input-row">
+          <input
+            type="password"
+            id="admin-password-input"
+            class="memphis-input"
+            placeholder="Enter login password…"
+            autocomplete="current-password"
+            required
+          />
+          <button type="button" class="secondary-cta-btn" id="btn-toggle-pw-vis" title="Show or hide password">
+            👁️
+          </button>
+        </div>
+
+        <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:0.88rem;font-weight:700;cursor:pointer">
+          <input type="checkbox" id="admin-remember-chk" checked style="width:17px;height:17px;accent-color:var(--brand-orange-deep)" />
+          Keep me signed in on this computer
+        </label>
+
+        <div class="form-error-msg" id="admin-login-error" hidden style="margin-top:12px"></div>
+
+        <button type="submit" class="primary-cta-btn primary-cta-btn--full" style="margin-top:16px">
+          🔓 Unlock Question Editor
+        </button>
+      </form>
+    </section>
+
+    <!-- ==========================================
+         SCREEN 2: QUESTION EDITOR WORKSPACE
+         ========================================== -->
+    <section class="memphis-card" id="admin-editor-screen" hidden>
+      <!-- STEP 1: CHOOSE EPISODE & QUESTION SLOT -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+        <h2 style="font-family:var(--font-display);margin:0;font-size:1.35rem">1. Choose Episode to View or Edit</h2>
+        <div class="segmented-pills" id="slot-toggle-pills">
+          <button type="button" class="seg-pill is-active" data-slot="main">☀️ Daily Double / Main Question</button>
+          <button type="button" class="seg-pill" data-slot="vault">🎁 Weekend Vault Bonus</button>
+        </div>
+      </div>
+
+      <div class="ep-selector-layout">
+        <div>
+          <label class="field-label" for="admin-ep-search">Filter Episodes by Title or Topic</label>
+          <input
+            type="search"
+            id="admin-ep-search"
+            class="memphis-input"
+            placeholder="Search (e.g. Clocks, Zebras, Impressionism)…"
+          />
+        </div>
+        <div>
+          <label class="field-label" for="admin-ep-select">Selected Episode (<span id="admin-ep-count">0</span> total)</label>
+          <select id="admin-ep-select" class="memphis-input"></select>
+        </div>
+      </div>
+
+      <!-- CURRENT LIVE DISPLAY CARD -->
+      <div class="current-preview-box">
+        <div class="preview-meta-row">
+          <span id="preview-ep-meta">Latest Episode</span>
+          <span id="preview-override-badge" class="speed-bonus-pill" hidden>✨ Custom Edited</span>
+        </div>
+
+        <div class="preview-question-box" data-toggle-field="question" title="Click to alter the question wording">
+          <span class="preview-lbl">Current Question (click any box below or check fields in Step 2 to edit)</span>
+          <p class="preview-q-text" id="preview-question-text">—</p>
+        </div>
+
+        <div class="preview-options-grid">
+          <div class="preview-opt-item" id="preview-opt-card-0" data-toggle-field="opt0">
+            <span><strong>A.</strong> <span id="preview-opt-0">—</span></span>
+            <span class="correct-tag" id="preview-correct-tag-0" hidden>✓ Correct Answer</span>
+          </div>
+          <div class="preview-opt-item" id="preview-opt-card-1" data-toggle-field="opt1">
+            <span><strong>B.</strong> <span id="preview-opt-1">—</span></span>
+            <span class="correct-tag" id="preview-correct-tag-1" hidden>✓ Correct Answer</span>
+          </div>
+          <div class="preview-opt-item" id="preview-opt-card-2" data-toggle-field="opt2">
+            <span><strong>C.</strong> <span id="preview-opt-2">—</span></span>
+            <span class="correct-tag" id="preview-correct-tag-2" hidden>✓ Correct Answer</span>
+          </div>
+          <div class="preview-opt-item" id="preview-opt-card-3" data-toggle-field="opt3">
+            <span><strong>D.</strong> <span id="preview-opt-3">—</span></span>
+            <span class="correct-tag" id="preview-correct-tag-3" hidden>✓ Correct Answer</span>
+          </div>
+        </div>
+
+        <div class="preview-exp-box" data-toggle-field="explanation" title="Click to alter the explanation">
+          <span class="preview-lbl">Current Explanation</span>
+          <div id="preview-explanation-text">—</div>
+        </div>
+      </div>
+
+      <!-- STEP 2: SELECT WHICH FIELD(S) TO ALTER -->
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <h2 style="font-family:var(--font-display);margin:0;font-size:1.35rem">2. Select Which Field(s) You Would Like to Alter</h2>
+        <div style="display:flex;gap:8px">
+          <button type="button" class="chip-link-btn" id="btn-select-all-fields">Select All Fields</button>
+          <button type="button" class="chip-link-btn" id="btn-clear-all-fields">Clear Selection</button>
+        </div>
+      </div>
+
+      <div class="field-selector-grid" id="field-selector-grid">
+        <label class="field-check-pill" data-field-pill="question">
+          <input type="checkbox" value="question" class="field-toggle-chk" />
+          <span>Question Wording</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="opt0">
+          <input type="checkbox" value="opt0" class="field-toggle-chk" />
+          <span>Option A</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="opt1">
+          <input type="checkbox" value="opt1" class="field-toggle-chk" />
+          <span>Option B</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="opt2">
+          <input type="checkbox" value="opt2" class="field-toggle-chk" />
+          <span>Option C</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="opt3">
+          <input type="checkbox" value="opt3" class="field-toggle-chk" />
+          <span>Option D</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="correctIndex">
+          <input type="checkbox" value="correctIndex" class="field-toggle-chk" />
+          <span>Correct Answer (A–D)</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="explanation">
+          <input type="checkbox" value="explanation" class="field-toggle-chk" />
+          <span>Answer Explanation</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="category" id="pill-wrap-category">
+          <input type="checkbox" value="category" class="field-toggle-chk" />
+          <span>Topic Category</span>
+        </label>
+        <label class="field-check-pill" data-field-pill="cueSeconds">
+          <input type="checkbox" value="cueSeconds" class="field-toggle-chk" />
+          <span>Audio Cue Timestamp</span>
+        </label>
+      </div>
+
+      <!-- STEP 3: TYPE EDITS & FINALIZE -->
+      <form id="admin-finalize-form">
+        <div id="no-fields-hint" style="padding:14px 16px;background:var(--surface-soft);border:2px dashed var(--ink);border-radius:var(--radius-md);font-weight:700;color:var(--ink-muted)">
+          👆 Check one or more fields above (or click directly on the Question, Options A–D, or Explanation in the preview card) to open its edit box.
+        </div>
+
+        <div class="edit-fields-container" id="edit-fields-container" hidden>
+          <div class="edit-field-row" id="edit-row-question" hidden>
+            <label class="field-label" for="input-edit-question">New Question Wording</label>
+            <input type="text" id="input-edit-question" class="memphis-input" placeholder="Type your clear, concise trivia question…" />
+          </div>
+
+          <div class="edit-field-row" id="edit-row-opt0" hidden>
+            <label class="field-label" for="input-edit-opt0">New Option A</label>
+            <input type="text" id="input-edit-opt0" class="memphis-input" />
+          </div>
+
+          <div class="edit-field-row" id="edit-row-opt1" hidden>
+            <label class="field-label" for="input-edit-opt1">New Option B</label>
+            <input type="text" id="input-edit-opt1" class="memphis-input" />
+          </div>
+
+          <div class="edit-field-row" id="edit-row-opt2" hidden>
+            <label class="field-label" for="input-edit-opt2">New Option C</label>
+            <input type="text" id="input-edit-opt2" class="memphis-input" />
+          </div>
+
+          <div class="edit-field-row" id="edit-row-opt3" hidden>
+            <label class="field-label" for="input-edit-opt3">New Option D</label>
+            <input type="text" id="input-edit-opt3" class="memphis-input" />
+          </div>
+
+          <div class="edit-field-row" id="edit-row-correctIndex" hidden>
+            <label class="field-label" for="input-edit-correctIndex">Correct Answer Choice</label>
+            <select id="input-edit-correctIndex" class="memphis-input">
+              <option value="0">Option A</option>
+              <option value="1">Option B</option>
+              <option value="2">Option C</option>
+              <option value="3">Option D</option>
+            </select>
+          </div>
+
+          <div class="edit-field-row" id="edit-row-explanation" hidden>
+            <label class="field-label" for="input-edit-explanation">New Answer Explanation</label>
+            <textarea id="input-edit-explanation" class="memphis-input" rows="3"></textarea>
+          </div>
+
+          <div class="edit-field-row" id="edit-row-category" hidden>
+            <label class="field-label" for="input-edit-category">Topic Category</label>
+            <select id="input-edit-category" class="memphis-input"></select>
+          </div>
+
+          <div class="edit-field-row" id="edit-row-cueSeconds" hidden>
+            <label class="field-label" for="input-edit-cueSeconds">Audio Timestamp Cue (in seconds)</label>
+            <input type="number" id="input-edit-cueSeconds" class="memphis-input" min="0" max="3600" />
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px">
+          <button type="submit" class="primary-cta-btn" id="btn-finalize-changes" disabled>
+            ✅ Finalize Changes
+          </button>
+          <button type="button" class="secondary-cta-btn" id="btn-revert-episode" hidden>
+            ↺ Reset Episode to Original
+          </button>
+        </div>
+
+        <div id="admin-save-status" class="status-banner" hidden></div>
+      </form>
+    </section>
+  </div>
+
+  <script type="module" src="./js/admin.js"></script>
+</body>
+</html>

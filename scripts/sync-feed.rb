@@ -91,24 +91,62 @@ def deterministic_shuffle(correct_opt, distractors, seed_str)
   [options, target_idx]
 end
 
+def split_into_clean_sentences(text)
+  protected_text = text.to_s
+    .gsub(/\ba\.m\./i, 'a__m__')
+    .gsub(/\bp\.m\./i, 'p__m__')
+    .gsub(/\bU\.S\./, 'U__S__')
+    .gsub(/\b(Dr|Mr|Mrs|Ms|St|Jr|Sr|vs|etc)\./i, '\1__DOT__')
+
+  protected_text
+    .split(/(?<=[.?!])\s+/)
+    .map do |s|
+      s.gsub(/a__m__/i, 'a.m.')
+       .gsub(/p__m__/i, 'p.m.')
+       .gsub(/U__S__/, 'U.S.')
+       .gsub(/__DOT__/, '.')
+       .strip
+    end
+    .select { |s| s.length > 25 && s !~ /patreon|airwave|megaphone|who arted|art smart|rainbow puppy|advertising@|related episodes|alarmcast/i }
+end
+
 def build_crafted_trivia_from_notes(ep)
   desc = ep[:description].to_s
   topic = ep[:title].sub(/^Fun Facts About (the |Your )?/i, '').strip
   topic_lower = topic.downcase
   category = classify_category(ep[:title], desc)
 
-  sentences = desc
-    .split(/(?<=[.?!])\s+/)
-    .map(&:strip)
-    .select { |s| s.length > 30 && s !~ /patreon|airwave|megaphone|who arted|art smart|rainbow puppy|advertising@|related episodes/i }
-
+  sentences = split_into_clean_sentences(desc)
   candidates = []
 
   sentences.each_with_index do |s, idx|
     next_s = sentences[idx + 1]
     explanation = next_s ? "#{s} #{next_s}" : "#{s} Listen to the episode to discover even more about #{topic}!"
 
-    if (m = s.match(/\b(?:moniker|term|name|word)\b[^.]{0,45}?\b(?:originated|coined)[^.]{0,35}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i))
+    if (m = s.match(/\b(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))\s+([a-z]+(?:\s+[a-z]+){0,2})/i))
+      time_val = m[1].strip
+      what_obj = m[2].strip
+      candidates << {
+        type: :clock_time,
+        question: "The first #{what_obj} mentioned in this episode was set to what time?",
+        correct: time_val,
+        distractors: ['5:30 a.m.', '6:00 a.m.', '7:30 a.m.'].reject { |t| t == time_val },
+        explanation: explanation
+      }
+    end
+
+    if (m = s.match(/\b(?:regulated with|powered by|fueled by|adjusted with)\s+([a-z0-9-]+(?:\s+[a-z0-9-]+){1,3})\b/i))
+      item = m[1].strip
+      candidates << {
+        type: :regulated,
+        question: "What surprising item is used to regulate or power the mechanism in #{topic}?",
+        correct: item[0].upcase + item[1..-1],
+        distractors: ['Weighted brass marbles', 'Liquid mercury drops', 'Pure quartz pebbles'],
+        explanation: explanation
+      }
+    end
+
+    if (m = s.match(/\b(?:moniker|term|name|word)\b[^.]{0,55}?\b(?:originated|coined)[^.]{0,40}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i))
       person = m[1].strip
       candidates << {
         type: :person,
@@ -119,13 +157,13 @@ def build_crafted_trivia_from_notes(ep)
       }
     end
 
-    if (m = s.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+invention\s+of|\s+(?:invented|discovered|created|developed|isolated))\s+(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/))
+    if (m = s.match(/\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+(?:invention\s+of\s+|(?:\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.)\s+)?)?|\s+(?:invented|discovered|created|developed|isolated|patented)\s+)(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/))
       person = m[1].strip
       obj = m[2].sub(/[.,;:]$/, '').strip
-      unless person =~ /^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/
+      unless person =~ /^(United States|North America|South Carolina|World War|Space Shuttle|Civil War|Northern Hemisphere|Great Clock|Elizabeth Tower|New Zealand)/
         candidates << {
           type: :inventor,
-          question: "Who invented or discovered the #{obj}?",
+          question: "Who created or patented the #{obj}?",
           correct: person,
           distractors: ['Michael Faraday', 'Thomas Edison', 'Antoine Lavoisier'],
           explanation: explanation
@@ -138,7 +176,7 @@ def build_crafted_trivia_from_notes(ep)
       num_val = spd.to_i.nonzero? || 100
       candidates << {
         type: :speed,
-        question: "What top speed is highlighted in the episode on #{topic}?",
+        question: "How fast can signals or movement in #{topic_lower} travel?",
         correct: "Up to #{spd}",
         distractors: [
           "Up to #{[5, (num_val * 0.15).round].max} miles per hour",
@@ -149,26 +187,26 @@ def build_crafted_trivia_from_notes(ep)
       }
     end
 
-    if (m = s.match(/\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as)\s+(?:an?\s+)?([^,.;()]{10,52})/i))
+    if (m = s.match(/\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as|adopted\s+a\s+[a-z-\s]+to\s+mirror)\s+(?:an?\s+|the\s+)?([^,.;()]{10,55})/i))
       role = m[1].strip
       candidates << {
         type: :function,
-        question: "What special role or defense is described in the episode on #{topic}?",
+        question: "What specific purpose or natural pattern is explained in the episode on #{topic}?",
         correct: role[0].upcase + role[1..-1],
         distractors: [
           'Camouflaging against large predators in tall grass',
           'Absorbing solar heat to stay warm overnight',
-          'Signaling social rank to rival herds'
+          'Signaling social rank to rival groups'
         ],
         explanation: explanation
       }
     end
 
-    if (m = s.match(/\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i))
+    if (m = s.match(/\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus|model)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i))
       term = m[1].sub(/[.,;:"”]$/, '').strip
       candidates << {
         type: :term,
-        question: "Which specialized process or system is central to #{topic_lower}?",
+        question: "Which specific process or system is central to #{topic_lower}?",
         correct: term[0].upcase + term[1..-1],
         distractors: ['The Kelvin-Helmholtz cascade', 'Osmotic phase equilibrium', 'The Coriolis resonance effect'],
         explanation: explanation
@@ -188,50 +226,49 @@ def build_crafted_trivia_from_notes(ep)
       end
     end
 
-    if (m = s.match(/\b(?:features?|possess(?:es)?|has|have|contains?)\s+(?:roughly\s+|nearly\s+|over\s+)?(\d+(?:,\d+)?(?:\s+million|\s+billion)?|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+([a-z]+(?:\s+[a-z]+)?)\b/i))
+    if (m = s.match(/\b(\d+(?:,\d+)+|\d+-(?:second|minute|hour|day|foot|inch|year)|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|forty|fifty|hundred)\s+([a-zA-Z]+(?:\s+[a-zA-Z]+){0,2})\b/))
       qty = m[1].strip
-      noun = m[2].strip
-      unless noun =~ /^(years|days|hours|minutes|seconds|feet|inches|miles|meters|percent)/i
+      noun = m[2].sub(/[.,;:]$/, '').strip
+      unless noun =~ /^(century|centuries|years|days|people|times|first|second)\b/i
         candidates << {
-          type: :count,
-          question: "How many #{noun} are featured in #{topic_lower}?",
+          type: :num_noun,
+          question: "What specific quantity of #{noun.downcase} is noted in the episode on #{topic}?",
           correct: "#{qty[0].upcase}#{qty[1..-1]} #{noun}",
-          distractors: ["One #{noun.sub(/s$/, '')}", "Fourteen #{noun}", "Fifty #{noun}"],
+          distractors: ["Single #{noun.sub(/s$/, '')}", "Seventeen #{noun}", "Over 400 #{noun}"],
           explanation: explanation
         }
       end
     end
+
+    if (m = s.match(/\b(1[5-9]\d\d|20[0-2]\d)\b/))
+      yr = m[1].to_i
+      candidates << {
+        type: :year,
+        question: "In what year did a key historical milestone in #{topic_lower} take place?",
+        correct: yr.to_s,
+        distractors: [(yr - 24).to_s, (yr + 19).to_s, (yr + 42).to_s],
+        explanation: explanation
+      }
+    end
   end
 
-  if candidates.size < 2
-    s0 = sentences[0] || "#{topic} has a rich scientific and cultural history."
-    s1 = sentences[1] || s0
+  sentences.each_with_index do |s, idx|
+    break if candidates.size >= 2
+
+    propers = s.scan(/\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,2})\b/).flatten
+    filtered = propers.reject { |w| w =~ /^(From|Early|Practical|Precision|Beyond|Meanwhile|While|Although|Because|Fun|Facts|Daily)/ }
+    target_noun = filtered[0] || topic
     candidates << {
-      type: :general1,
-      question: "What key feature is highlighted in the episode about #{topic}?",
-      correct: 'Its specialized structure and real-world adaptations',
-      distractors: [
-        'Its complete reliance on sub-zero polar temperatures',
-        'Its accidental ban across nineteenth-century trade',
-        'Its inability to function outside laboratory vacuum chambers'
-      ],
-      explanation: "#{s0} #{s1}"
-    }
-    candidates << {
-      type: :general2,
-      question: "What else do we learn about #{topic} in this episode?",
-      correct: 'Surprising scientific discoveries and historical milestones',
-      distractors: [
-        'Why ancient astronomers mistook it for a comet',
-        'How medieval guilds hid its formula for 400 years',
-        'Why modern geologists classify it as a rare gemstone'
-      ],
-      explanation: sentences[1..2]&.join(' ').to_s.empty? ? s0 : sentences[1..2].join(' ')
+      type: :"proper_#{idx}",
+      question: "Which notable example or milestone is featured in the episode on #{topic}?",
+      correct: target_noun,
+      distractors: ['The Royal Greenwich Meridian', 'The Archimedes Water Screw', 'The Antikythera Astrolabe'].reject { |d| d == target_noun },
+      explanation: s
     }
   end
 
   primary = candidates[0]
-  secondary = candidates.drop(1).find { |c| c[:type] != primary[:type] } || candidates[1]
+  secondary = candidates.drop(1).find { |c| c[:type] != primary[:type] && c[:correct] != primary[:correct] } || candidates[1] || candidates[0]
 
   q1_opts, q1_idx = deterministic_shuffle(primary[:correct], primary[:distractors], "#{ep[:guid]}_main")
   q2_opts, q2_idx = deterministic_shuffle(secondary[:correct], secondary[:distractors], "#{ep[:guid]}_vault")

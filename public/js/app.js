@@ -2,18 +2,19 @@ import { AVATARS, BADGES, CATEGORIES, SHOW_CONFIG } from './config.js';
 import { MemphisPodcastPlayer, formatPubDate, formatTime } from './audio-player.js';
 import {
   addEpisodeToPlaylist,
+  applyEpisodeOverride,
   createPlaylist,
   decodePlaylistShareParam,
   deletePlaylist,
   encodePlaylistShareParam,
   evaluateNewBadges,
   exportSyncCode,
+  fetchGlobalOverrides,
   getAnsweredGuidsSet,
   getBadgeMeta,
   getWeekendKey,
   importSyncCode,
   isWeekendDay,
-  loadHostOverrides,
   loadPlayerState,
   markApplePodcastVisited,
   markEpisodePlayed,
@@ -24,7 +25,6 @@ import {
   recordDailyDoubleSubmission,
   recordWeekendVaultSubmission,
   removeEpisodeFromPlaylist,
-  saveHostOverride,
   savePlayerState,
   setCatalogGuids,
   toggleFavoriteEpisode
@@ -438,9 +438,12 @@ async function checkLiveRssFeed(latestKnownGuid) {
         .trim();
 
       const sentences = cleanDesc
+        .replace(/\ba\.m\./gi, 'a__m__')
+        .replace(/\bp\.m\./gi, 'p__m__')
+        .replace(/\bU\.S\./g, 'U__S__')
         .split(/(?<=[.?!])\s+/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 30 && !/patreon|airwave|megaphone|who arted|art smart|rainbow puppy/i.test(s));
+        .map((s) => s.replace(/a__m__/gi, 'a.m.').replace(/p__m__/gi, 'p.m.').replace(/U__S__/g, 'U.S.').trim())
+        .filter((s) => s.length > 25 && !/patreon|airwave|megaphone|who arted|art smart|rainbow puppy|alarmcast/i.test(s));
 
       const topic = title.replace(/^Fun Facts About (the |Your )?/i, '').trim();
       const topicLower = topic.toLowerCase();
@@ -452,8 +455,21 @@ async function checkLiveRssFeed(latestKnownGuid) {
         const nextS = sentences[sIdx + 1] || '';
         const explanation = nextS ? `${s} ${nextS}` : `${s} Listen to the episode to discover even more about ${topic}!`;
 
+        const timeMatch = s.match(/\b(\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.))\s+([a-z]+(?:\s+[a-z]+){0,2})/i);
+        if (timeMatch) {
+          const timeVal = timeMatch[1].trim();
+          const whatObj = timeMatch[2].trim();
+          candidates.push({
+            type: 'clock_time',
+            question: `The first ${whatObj} mentioned in this episode was set to what time?`,
+            correct: timeVal,
+            distractors: ['5:30 a.m.', '6:00 a.m.', '7:30 a.m.'].filter((t) => t !== timeVal),
+            explanation
+          });
+        }
+
         const coinedMatch = s.match(
-          /\b(?:moniker|term|name|word)\b[^.]{0,45}?\b(?:originated|coined)[^.]{0,35}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i
+          /\b(?:moniker|term|name|word)\b[^.]{0,55}?\b(?:originated|coined)[^.]{0,40}?\bby\s+(?:[a-z-]+\s+){0,2}([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})\b/i
         );
         if (coinedMatch) {
           candidates.push({
@@ -466,13 +482,13 @@ async function checkLiveRssFeed(latestKnownGuid) {
         }
 
         const invMatch = s.match(
-          /\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+invention\s+of|\s+(?:invented|discovered|created|developed|isolated))\s+(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/
+          /\b([A-Z][a-z]+(?:\s+[A-Z][a-z.-]+){1,2})(?:'s\s+\d{4}\s+(?:invention\s+of\s+|(?:\d{1,2}:\d{2}\s*(?:a\.m\.|p\.m\.)\s+)?)?|\s+(?:invented|discovered|created|developed|isolated|patented)\s+)(?:the\s+)?([a-zA-Z0-9\s-]{4,34})/
         );
-        if (invMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War)/.test(invMatch[1])) {
+        if (invMatch && !/^(United States|North America|South Carolina|World War|Space Shuttle|Civil War|Northern Hemisphere|Great Clock|Elizabeth Tower|New Zealand)/.test(invMatch[1])) {
           const obj = invMatch[2].replace(/[.,;:]$/, '').trim();
           candidates.push({
             type: 'inventor',
-            question: `Who invented or discovered the ${obj}?`,
+            question: `Who created or patented the ${obj}?`,
             correct: invMatch[1].trim(),
             distractors: ['Michael Faraday', 'Thomas Edison', 'Antoine Lavoisier'],
             explanation
@@ -485,7 +501,7 @@ async function checkLiveRssFeed(latestKnownGuid) {
           const numVal = parseInt(spd, 10) || 100;
           candidates.push({
             type: 'speed',
-            question: `What top speed is highlighted in the episode on ${topic}?`,
+            question: `How fast can signals or movement in ${topicLower} travel?`,
             correct: `Up to ${spd}`,
             distractors: [
               `Up to ${Math.max(5, Math.round(numVal * 0.15))} miles per hour`,
@@ -496,12 +512,12 @@ async function checkLiveRssFeed(latestKnownGuid) {
           });
         }
 
-        const funcMatch = s.match(/\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as)\s+(?:an?\s+)?([^,.;()]{10,52})/i);
+        const funcMatch = s.match(/\b(?:act(?:s)? as|function(?:s)? as|serve(?:s)? as|adopted\s+a\s+[a-z-\s]+to\s+mirror)\s+(?:an?\s+|the\s+)?([^,.;()]{10,55})/i);
         if (funcMatch) {
           const role = funcMatch[1].trim();
           candidates.push({
             type: 'function',
-            question: `What special role or defense is described in the episode on ${topic}?`,
+            question: `What specific purpose or natural pattern is explained in the episode on ${topic}?`,
             correct: role.charAt(0).toUpperCase() + role.slice(1),
             distractors: [
               'Camouflaging against large predators in tall grass',
@@ -513,13 +529,13 @@ async function checkLiveRssFeed(latestKnownGuid) {
         }
 
         const termMatch = s.match(
-          /\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i
+          /\b(?:process|reaction|phenomenon|condition|network|system|illusion|method|apparatus|model)\s+(?:is\s+)?(?:known as|called|termed)\s+(?:the\s+)?["“]?([A-Za-z][A-Za-z0-9\s-]{3,28})["”]?/i
         );
         if (termMatch) {
           const term = termMatch[1].replace(/[.,;:"”]$/, '').trim();
           candidates.push({
             type: 'term',
-            question: `Which specialized process or system is central to ${topicLower}?`,
+            question: `Which specific process or system is central to ${topicLower}?`,
             correct: term.charAt(0).toUpperCase() + term.slice(1),
             distractors: ['The Kelvin-Helmholtz cascade', 'Osmotic phase equilibrium', 'The Coriolis resonance effect'],
             explanation
@@ -539,35 +555,29 @@ async function checkLiveRssFeed(latestKnownGuid) {
         }
       }
 
-      if (candidates.length < 2) {
-        const s0 = sentences[0] || `${topic} features fascinating history and science.`;
-        const s1 = sentences[1] || s0;
+      for (let i = 0; i < sentences.length && candidates.length < 2; i++) {
+        const s = sentences[i];
+        const properMatches = s.match(/\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,2})\b/g) || [];
+        const filtered = properMatches.filter(
+          (w) => !/^(From|Early|Practical|Precision|Beyond|Meanwhile|While|Although|Because|Fun|Facts|Daily)/.test(w)
+        );
+        const targetNoun = filtered[0] || topic;
         candidates.push({
-          type: 'gen1',
-          question: `What primary characteristic or breakthrough is highlighted in the episode on ${topic}?`,
-          correct: 'Its specialized structure and historical evolution',
-          distractors: [
-            'Its complete reliance on sub-zero polar temperatures',
-            'Its accidental ban across nineteenth-century maritime trade',
-            'Its inability to function outside laboratory vacuum chambers'
-          ],
-          explanation: `${s0} ${s1}`
-        });
-        candidates.push({
-          type: 'gen2',
-          question: `Which additional aspect of ${topic} is explored in the episode?`,
-          correct: 'Real-world applications and surprising physical adaptations',
-          distractors: [
-            'Why ancient astronomers mistook it for a planetary alignment',
-            'How medieval guilds kept its formula secret for 400 years',
-            'Why modern scientists classify it as a synthetic mineral'
-          ],
-          explanation: sentences.slice(1, 3).join(' ') || s0
+          type: `proper_${i}`,
+          question: `Which notable example or milestone is featured in the episode on ${topic}?`,
+          correct: targetNoun,
+          distractors: ['The Royal Greenwich Meridian', 'The Archimedes Water Screw', 'The Antikythera Astrolabe'].filter(
+            (d) => d !== targetNoun
+          ),
+          explanation: s
         });
       }
 
       const primary = candidates[0];
-      const secondary = candidates.find((c, idx) => idx > 0 && c.type !== primary.type) || candidates[1];
+      const secondary =
+        candidates.find((c, idx) => idx > 0 && c.type !== primary.type && c.correct !== primary.correct) ||
+        candidates[1] ||
+        candidates[0];
       const q1 = shuffleLiveOptions(primary.correct, primary.distractors, `${guid}_main`);
       const q2 = shuffleLiveOptions(secondary.correct, secondary.distractors, `${guid}_vault`);
 
@@ -601,21 +611,20 @@ async function checkLiveRssFeed(latestKnownGuid) {
 }
 
 async function loadCatalog() {
-  const res = await fetch('./data/questions.json', { cache: 'no-cache' });
+  const [res, overrides] = await Promise.all([
+    fetch('./data/questions.json', { cache: 'no-cache' }),
+    fetchGlobalOverrides().catch(() => ({}))
+  ]);
   const rawList = await res.json();
-  const overrides = loadHostOverrides();
 
-  state.episodes = rawList.map((ep) => {
-    const patch = overrides[ep.guid];
-    return patch ? { ...ep, ...patch } : ep;
-  });
+  state.episodes = rawList.map((ep) => applyEpisodeOverride(ep, overrides[ep.guid]));
 
   // Dynamic live check: if Megaphone has published a new episode that is not yet committed in questions.json,
   // fetch and mount it instantly so today's episode is never missed!
   try {
     const liveEp = await checkLiveRssFeed(state.episodes[0]?.guid);
     if (liveEp && !state.episodes.some((e) => e.guid === liveEp.guid)) {
-      state.episodes.unshift(liveEp);
+      state.episodes.unshift(applyEpisodeOverride(liveEp, overrides[liveEp.guid]));
     }
   } catch {
     // Non-blocking
@@ -2971,7 +2980,6 @@ function bindModalEvents() {
   const playlistPickerModal = document.getElementById('playlist-picker-modal');
   const installModal = document.getElementById('install-app-modal');
   const syncModal = document.getElementById('sync-modal');
-  const studioModal = document.getElementById('studio-modal');
 
   // Social Score Card Actions
   document.getElementById('btn-native-share-card').addEventListener('click', async () => {
@@ -3101,118 +3109,17 @@ function bindModalEvents() {
     }
   });
 
-  // Host Studio (both header and floating drawer buttons)
-  const catSelect = document.getElementById('studio-q-category');
-  catSelect.innerHTML = CATEGORIES.filter((c) => c.id !== 'ALL')
-    .map((c) => `<option value="${escapeHtml(c.id)}">${escapeHtml(c.label)}</option>`)
-    .join('');
-
-  const openStudioModal = () => {
-    setFloatingDrawerOpen(false);
-    document.getElementById('studio-ep-count').textContent = String(state.episodes.length);
-    renderStudioResults('');
-    studioModal.hidden = false;
-  };
-  if (new URLSearchParams(window.location.search).get('studio') === '1') {
-    openStudioModal();
-  }
-
-  document.getElementById('studio-search-input').addEventListener('input', (ev) => {
-    renderStudioResults(ev.target.value);
-  });
-
-  document.getElementById('studio-edit-form').addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    if (!state.editingGuid) return;
-    const patch = {
-      category: document.getElementById('studio-q-category').value,
-      cueSeconds: Number(document.getElementById('studio-q-cue').value) || 0,
-      question: document.getElementById('studio-q-text').value.trim(),
-      options: [
-        document.getElementById('studio-opt-0').value.trim(),
-        document.getElementById('studio-opt-1').value.trim(),
-        document.getElementById('studio-opt-2').value.trim(),
-        document.getElementById('studio-opt-3').value.trim()
-      ],
-      correctIndex: Number(document.getElementById('studio-q-correct').value),
-      explanation: document.getElementById('studio-q-exp').value.trim()
-    };
-
-    saveHostOverride(state.editingGuid, patch);
-    const ep = state.episodesByGuid.get(state.editingGuid);
-    if (ep) Object.assign(ep, patch);
-
-    renderDailySection();
-    renderCategoryFilterBar();
-    renderEpisodesCatalog();
-    if (state.currentArchiveEp?.guid === state.editingGuid) {
-      renderArchiveQuestionCard();
-    }
-    showToast('Saved question update!', '💾');
-  });
-
-  document.getElementById('btn-export-questions-json').addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(state.episodes, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'questions.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
   document.querySelectorAll('[data-close-modal]').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.getElementById(btn.dataset.closeModal).hidden = true;
     });
   });
 
-  [scorecardModal, playlistPickerModal, installModal, syncModal, studioModal].forEach((backdrop) => {
+  [scorecardModal, playlistPickerModal, installModal, syncModal].forEach((backdrop) => {
     backdrop.addEventListener('click', (ev) => {
       if (ev.target === backdrop) backdrop.hidden = true;
     });
   });
-}
-
-function renderStudioResults(query) {
-  const q = String(query || '').toLowerCase().trim();
-  const listEl = document.getElementById('studio-results-list');
-  const matches = state.episodes
-    .filter((ep) => !q || ep.title.toLowerCase().includes(q) || ep.question.toLowerCase().includes(q))
-    .slice(0, 40);
-
-  listEl.innerHTML = matches
-    .map(
-      (ep) => `
-      <button type="button" class="studio-ep-item" data-studio-guid="${escapeHtml(ep.guid)}">
-        <span>${escapeHtml(ep.title)}</span>
-        <span style="color:var(--ink-muted)">${escapeHtml(ep.category)} • ${formatTime(ep.cueSeconds)}</span>
-      </button>
-    `
-    )
-    .join('');
-
-  listEl.querySelectorAll('[data-studio-guid]').forEach((btn) => {
-    btn.addEventListener('click', () => openStudioEditor(btn.dataset.studioGuid));
-  });
-}
-
-function openStudioEditor(guid) {
-  const ep = state.episodesByGuid.get(guid);
-  if (!ep) return;
-  state.editingGuid = guid;
-  const form = document.getElementById('studio-edit-form');
-  form.hidden = false;
-  document.getElementById('studio-edit-ep-title').textContent = ep.title;
-  document.getElementById('studio-q-category').value = ep.category;
-  document.getElementById('studio-q-cue').value = ep.cueSeconds || 180;
-  document.getElementById('studio-q-text').value = ep.question;
-  document.getElementById('studio-opt-0').value = ep.options[0] || '';
-  document.getElementById('studio-opt-1').value = ep.options[1] || '';
-  document.getElementById('studio-opt-2').value = ep.options[2] || '';
-  document.getElementById('studio-opt-3').value = ep.options[3] || '';
-  document.getElementById('studio-q-correct').value = String(ep.correctIndex);
-  document.getElementById('studio-q-exp').value = ep.explanation;
 }
 
 // Boot application
