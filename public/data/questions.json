@@ -1,12 +1,44 @@
 [
   {
+    "guid": "fcd9b0c4-e490-11f1-aba1-0b1c262de91f",
+    "title": "Fun Facts About Clocks",
+    "pubDate": "Fri, 20 Nov 2026 08:10:00 -0000",
+    "durationSec": 1035,
+    "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/fcd9b0c4-e490-11f1-aba1-0b1c262de91f/image/4748c5a021daf48c98f7c49987de7a26.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML8403631983.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-clocks/id1810507693?i=1000803081174&uo=4",
+    "category": "History",
+    "cueSeconds": 165,
+    "question": "What key feature is highlighted in the episode about Clocks?",
+    "options": [
+      "Its complete reliance on sub-zero polar temperatures",
+      "Its specialized structure and real-world adaptations",
+      "Its accidental ban across nineteenth-century trade",
+      "Its inability to function outside laboratory vacuum chambers"
+    ],
+    "correctIndex": 1,
+    "explanation": "From ancient sundials to modern atomic timekeepers, the history of clocks reveals how human societies have measured time with growing precision. Early mechanical clocks in the Northern Hemisphere adopted a clockwise motion to mirror the sweep of sundial shadows across the sky, while exceptions such as Prague's 16th-century Jewish Town Hall clock and La Paz's modified legislative clock demonstrate cultural and regional variations.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "What else do we learn about Clocks in this episode?",
+      "options": [
+        "Why ancient astronomers mistook it for a comet",
+        "How medieval guilds hid its formula for 400 years",
+        "Surprising scientific discoveries and historical milestones",
+        "Why modern geologists classify it as a rare gemstone"
+      ],
+      "correctIndex": 2,
+      "explanation": "Early mechanical clocks in the Northern Hemisphere adopted a clockwise motion to mirror the sweep of sundial shadows across the sky, while exceptions such as Prague's 16th-century Jewish Town Hall clock and La Paz's modified legislative clock demonstrate cultural and regional variations. Practical timekeeping milestones include Levi Hutchins's 1787 4:00 a.m."
+    }
+  },
+  {
     "guid": "2dbdf010-e3b0-11f1-9667-57e19642bd55",
     "title": "Fun Facts About Your Nervous System",
     "pubDate": "Thu, 19 Nov 2026 08:10:00 -0000",
     "durationSec": 879,
     "artworkUrl": "https://megaphone.imgix.net/podcasts/2dbdf010-e3b0-11f1-9667-57e19642bd55/image/baf2e1f381c18a2a6f1b1cf0d5d7da63.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
     "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1560107009.mp3",
-    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-your-nervous-system/id1810507693?i=1000802884111&uo=4",
     "category": "Science",
     "cueSeconds": 145,
     "question": "How fast can nerve signals travel if the neurons have a myelin sheath?",
