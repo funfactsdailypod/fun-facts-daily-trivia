@@ -3,6 +3,7 @@ import { BADGES, CLOUD_CONFIG, SHOW_CONFIG } from './config.js';
 const STORAGE_KEY = 'ffd_trivia_player_v1';
 const OVERRIDES_KEY = 'ffd_trivia_host_overrides_v1';
 const SUPABASE_OVERRIDES_CODE = 'FFDADMIN';
+const SUPABASE_KEEPALIVE_CODE = 'FFDPING';
 
 let activeCatalogGuids = [];
 
@@ -604,4 +605,51 @@ export async function deleteGlobalOverride(guid) {
   }
 
   return latestAll;
+}
+
+/**
+ * Pings Supabase every time anyone opens the app (recording a live PostgreSQL row write + RPC cleanup)
+ * so Supabase Free Tier always sees active database traffic and never pauses the project.
+ */
+export async function pingSupabaseActivity() {
+  const endpoint = getSupabaseRestUrl();
+  if (!endpoint || !CLOUD_CONFIG?.supabaseAnonKey || typeof fetch === 'undefined') {
+    return false;
+  }
+
+  const headers = {
+    apikey: CLOUD_CONFIG.supabaseAnonKey,
+    Authorization: `Bearer ${CLOUD_CONFIG.supabaseAnonKey}`,
+    'Content-Type': 'application/json'
+  };
+  const nowIso = new Date().toISOString();
+
+  try {
+    await Promise.all([
+      fetch(`${endpoint}/group_rooms`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          Prefer: 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({
+          code: SUPABASE_KEEPALIVE_CODE,
+          expires_at: '2099-12-31T23:59:59.000Z',
+          state: {
+            heartbeat: true,
+            lastActiveAt: nowIso
+          },
+          updated_at: nowIso
+        })
+      }),
+      fetch(`${endpoint}/rpc/cleanup_expired_group_rooms`, {
+        method: 'POST',
+        headers,
+        body: '{}'
+      }).catch(() => null)
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
 }

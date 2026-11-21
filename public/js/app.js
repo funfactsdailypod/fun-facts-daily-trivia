@@ -21,6 +21,7 @@ import {
   markGroupGamePlayed,
   moveEpisodeInPlaylist,
   moveFavoriteEpisode,
+  pingSupabaseActivity,
   recordArchiveSubmission,
   recordDailyDoubleSubmission,
   recordWeekendVaultSubmission,
@@ -611,6 +612,9 @@ async function checkLiveRssFeed(latestKnownGuid) {
 }
 
 async function loadCatalog() {
+  // Ping Supabase on every app open so the Free Tier database stays active and never pauses
+  pingSupabaseActivity().catch(() => {});
+
   const [res, overrides] = await Promise.all([
     fetch('./data/questions.json', { cache: 'no-cache' }),
     fetchGlobalOverrides().catch(() => ({}))
@@ -663,25 +667,25 @@ function initAudioPlayers() {
   heroPlayer = new MemphisPodcastPlayer(document.getElementById('hero-player-mount'), {
     ...sharedHooks,
     compact: false,
-    preload: 'metadata'
+    preload: 'auto'
   });
 
   archivePlayer = new MemphisPodcastPlayer(document.getElementById('archive-player-mount'), {
     ...sharedHooks,
     compact: true,
-    preload: 'none'
+    preload: 'auto'
   });
 
   libraryPlayer = new MemphisPodcastPlayer(document.getElementById('library-player-mount'), {
     ...sharedHooks,
     compact: true,
-    preload: 'none'
+    preload: 'metadata'
   });
 
   playlistPlayer = new MemphisPodcastPlayer(document.getElementById('playlist-player-mount'), {
     ...sharedHooks,
     compact: true,
-    preload: 'none',
+    preload: 'auto',
     onTrackEnded: () => advancePlaylistQueue()
   });
 
@@ -883,6 +887,11 @@ function renderDailySection() {
     return;
   }
 
+  // Preload / start downloading the Daily Double episode audio as soon as the question is pulled up
+  if (heroPlayer) {
+    heroPlayer.loadEpisode(latest, { cueSeconds: 0, autoPlay: false });
+  }
+
   const catMeta = getCategoryMeta(latest.category);
   const catTag = document.getElementById('daily-category-tag');
   catTag.textContent = `${catMeta.icon} ${latest.category}`;
@@ -937,6 +946,11 @@ function renderWeekendBonusView() {
   const { episode, bonus } = candidate;
   const wkKey = getWeekendKey();
   const attempt = state.player.weekendVaultAttempts[wkKey];
+
+  // Preload / start downloading the Weekend Vault Bonus episode audio as soon as this tab is pulled up
+  if (heroPlayer) {
+    heroPlayer.loadEpisode(episode, { cueSeconds: Number(bonus.cueSeconds) || 180, autoPlay: false });
+  }
 
   const catMeta = getCategoryMeta(episode.category);
   const catTag = document.getElementById('daily-category-tag');
@@ -1142,6 +1156,11 @@ function renderArchiveQuestionCard() {
   document.getElementById('archive-submit-row').hidden = false;
   document.getElementById('btn-archive-shuffle').hidden = false;
   document.getElementById('archive-reveal-box').hidden = true;
+
+  // Start downloading and buffering the episode audio at the answer timestamp as soon as the question is pulled up
+  if (archivePlayer) {
+    archivePlayer.loadEpisode(ep, { cueSeconds: Number(ep.cueSeconds) || 180, autoPlay: false });
+  }
 }
 
 function bindSoloEvents() {

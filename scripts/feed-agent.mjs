@@ -595,21 +595,56 @@ export function buildCraftedTriviaFromNotes(episode) {
 }
 
 async function pingSupabaseKeepAlive() {
-  const rawUrl = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
+  let rawUrl = process.env.SUPABASE_URL;
+  let key = process.env.SUPABASE_ANON_KEY;
+
+  // Fallback to reading CLOUD_CONFIG from public/js/config.js so GitHub Actions pings Supabase even without extra repo secrets
+  if (!rawUrl || !key) {
+    try {
+      const cfgPath = path.resolve(__dirname, '../public/js/config.js');
+      const cfgSrc = await fs.readFile(cfgPath, 'utf8');
+      const urlMatch = cfgSrc.match(/supabaseUrl:\s*['"]([^'"]+)['"]/);
+      const keyMatch = cfgSrc.match(/supabaseAnonKey:\s*['"]([^'"]+)['"]/);
+      if (urlMatch && keyMatch) {
+        rawUrl = urlMatch[1];
+        key = keyMatch[1];
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
   if (!rawUrl || !key) return;
   const url = String(rawUrl).trim().replace(/\/+$/, '').replace(/\/rest\/v1\/?$/, '');
+  const nowIso = new Date().toISOString();
+  const headers = {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    'Content-Type': 'application/json'
+  };
+
   try {
-    await fetch(`${url}/rest/v1/rpc/cleanup_expired_group_rooms`, {
-      method: 'POST',
-      headers: {
-        apikey: key,
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json'
-      },
-      body: '{}'
-    });
-    console.log('Pinged Supabase Free Tier & cleaned expired group rooms.');
+    await Promise.all([
+      fetch(`${url}/rest/v1/group_rooms`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          Prefer: 'resolution=merge-duplicates,return=minimal'
+        },
+        body: JSON.stringify({
+          code: 'FFDPING',
+          expires_at: '2099-12-31T23:59:59.000Z',
+          state: { heartbeat: true, lastActiveAt: nowIso, source: 'scheduled_agent' },
+          updated_at: nowIso
+        })
+      }),
+      fetch(`${url}/rest/v1/rpc/cleanup_expired_group_rooms`, {
+        method: 'POST',
+        headers,
+        body: '{}'
+      }).catch(() => null)
+    ]);
+    console.log('Pinged Supabase Free Tier (wrote FFDPING heartbeat & cleaned expired rooms).');
   } catch (err) {
     console.warn('Supabase keep-alive warning:', err.message);
   }

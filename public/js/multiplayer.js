@@ -294,7 +294,7 @@ export class GroupGameService {
         suggestedCode: await this.generateUniqueCode()
       };
     }
-    if (!isFamilyFriendlyText(code) || code === 'FFDADMIN') {
+    if (!isFamilyFriendlyText(code) || code === 'FFDADMIN' || code === 'FFDPING') {
       return {
         available: false,
         reason: 'Please choose a different game code.',

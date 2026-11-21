@@ -27,7 +27,7 @@ export class MemphisPodcastPlayer {
     container,
     {
       compact = false,
-      preload = 'metadata',
+      preload = 'auto',
       onPlayEpisode = null,
       onAppleClick = null,
       onTrackEnded = null,
@@ -386,13 +386,33 @@ export class MemphisPodcastPlayer {
 
   loadEpisode(episode, { cueSeconds = 0, autoPlay = false, queueLabel = '' } = {}) {
     if (!episode) return;
+    const targetCue = Math.max(0, Number(cueSeconds) || 0);
+    const sameEpisodeLoaded =
+      this.episode &&
+      this.episode.guid === episode.guid &&
+      this.audio.src &&
+      episode.audioUrl &&
+      this.audio.src.includes(episode.audioUrl.split('?')[0]);
+
     this.episode = episode;
-    this.cueSeconds = Math.max(0, Number(cueSeconds) || 0);
+    this.cueSeconds = targetCue;
     this.queueLabel = queueLabel;
 
-    this.audio.pause();
-    this.audio.src = episode.audioUrl || '';
-    this.pendingSeek = this.cueSeconds > 0 ? this.cueSeconds : null;
+    if (!sameEpisodeLoaded) {
+      this.audio.pause();
+      this.audio.preload = 'auto';
+      this.audio.src = episode.audioUrl || '';
+      this.pendingSeek = this.cueSeconds > 0 ? this.cueSeconds : null;
+      if (this.audio.src) {
+        try {
+          this.audio.load();
+        } catch {
+          // Ignore load error in non-browser test environments
+        }
+      }
+    } else if (this.audio.paused && targetCue > 0 && Math.abs((this.audio.currentTime || 0) - targetCue) > 2) {
+      this.seekTo(targetCue);
+    }
 
     this.els.artwork.src = episode.artworkUrl || SHOW_CONFIG.defaultArtwork;
     this.els.artwork.alt = `Cover art for ${episode.title}`;
