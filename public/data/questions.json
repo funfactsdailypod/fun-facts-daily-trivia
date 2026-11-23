@@ -1,12 +1,44 @@
 [
   {
+    "guid": "8d9d274c-e6d2-11f1-92c2-2fc2ecfb3020",
+    "title": "Fun Facts About the Mayflower",
+    "pubDate": "Mon, 23 Nov 2026 08:10:00 -0000",
+    "durationSec": 1016,
+    "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/8d9d274c-e6d2-11f1-92c2-2fc2ecfb3020/image/0fd2f702c40dae2893343a5c65727631.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML3803890172.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-the-mayflower/id1810507693?i=1000803551978&uo=4",
+    "category": "Geography",
+    "cueSeconds": 165,
+    "question": "What specific quantity of voyage aboard a is noted in the episode on Mayflower?",
+    "options": [
+      "66-day voyage aboard a",
+      "Single voyage aboard a",
+      "Seventeen voyage aboard a",
+      "Over 400 voyage aboard a"
+    ],
+    "correctIndex": 0,
+    "explanation": "Sailing from England to New England in 1620, the Mayflower carried 102 passengers across the Atlantic Ocean on a cramped 66-day voyage aboard a merchant cargo vessel. Originally planned as a two-ship journey alongside the Speedwell , repeated leaks forced the group to abandon the Speedwell , consolidate onto the Mayflower , and endure autumn storms that cracked a main midship beam, repaired at sea using a large iron screw brought from Holland and a wooden brace.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "In what year did a key historical milestone in mayflower take place?",
+      "options": [
+        "1596",
+        "1620",
+        "1639",
+        "1662"
+      ],
+      "correctIndex": 1,
+      "explanation": "Sailing from England to New England in 1620, the Mayflower carried 102 passengers across the Atlantic Ocean on a cramped 66-day voyage aboard a merchant cargo vessel. Originally planned as a two-ship journey alongside the Speedwell , repeated leaks forced the group to abandon the Speedwell , consolidate onto the Mayflower , and endure autumn storms that cracked a main midship beam, repaired at sea using a large iron screw brought from Holland and a wooden brace."
+    }
+  },
+  {
     "guid": "fcd9b0c4-e490-11f1-aba1-0b1c262de91f",
     "title": "Fun Facts About Clocks",
     "pubDate": "Fri, 20 Nov 2026 08:10:00 -0000",
     "durationSec": 1035,
     "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/fcd9b0c4-e490-11f1-aba1-0b1c262de91f/image/4748c5a021daf48c98f7c49987de7a26.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
     "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML8403631983.mp3",
-    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-clocks/id1810507693?i=1000803081174&uo=4",
     "category": "History",
     "cueSeconds": 245,
     "question": "The first alarm clock in America was set to ring at what time?",
