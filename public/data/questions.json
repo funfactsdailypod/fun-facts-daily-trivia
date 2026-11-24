@@ -1,5 +1,37 @@
 [
   {
+    "guid": "d9471340-e7a1-11f1-83b4-7789c2b9fc75",
+    "title": "Fun Facts About the Wampanoag People",
+    "pubDate": "Tue, 24 Nov 2026 08:10:00 -0000",
+    "durationSec": 876,
+    "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/d9471340-e7a1-11f1-83b4-7789c2b9fc75/image/3091263cf349a2edcac63df716a00122.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML8439879079.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-the-wampanoag-people/id1810507693?i=1000803745607&uo=4",
+    "category": "History",
+    "cueSeconds": 165,
+    "question": "In what year did a key historical milestone in wampanoag people take place?",
+    "options": [
+      "1597",
+      "1621",
+      "1640",
+      "1663"
+    ],
+    "correctIndex": 1,
+    "explanation": "In 1621, the Wampanoag leader Ousamequin, often called by his title Massasoit, meaning Great Sachem, built a strategic alliance with Plymouth colonists, and around 90 Wampanoag men joined 53 surviving Mayflower settlers for the three-day harvest feast later known as the First Thanksgiving. Skilled builders and stewards of the land, Wampanoag families adapted to the New England seasons by building dome-shaped cedar homes called wetus, hollowing out dugout canoes called mishoons with controlled fire, and harvesting wild cranberries paired with maple.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "In what year did a key historical milestone in wampanoag people take place?",
+      "options": [
+        "1639",
+        "1682",
+        "1663",
+        "1705"
+      ],
+      "correctIndex": 2,
+      "explanation": "In 1663, a printing press in Cambridge, Massachusetts produced the first Bible ever printed in North America. It was printed in the Wôpanâak language, more than a century before an English Bible was printed on the continent."
+    }
+  },
+  {
     "guid": "8d9d274c-e6d2-11f1-92c2-2fc2ecfb3020",
     "title": "Fun Facts About the Mayflower",
     "pubDate": "Mon, 23 Nov 2026 08:10:00 -0000",
