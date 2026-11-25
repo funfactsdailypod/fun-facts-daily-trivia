@@ -1,5 +1,37 @@
 [
   {
+    "guid": "5ec67bea-e870-11f1-817c-a3fd9dfb8ac6",
+    "title": "Fun Facts About Stuffing",
+    "pubDate": "Wed, 25 Nov 2026 08:10:00 -0000",
+    "durationSec": 891,
+    "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/5ec67bea-e870-11f1-817c-a3fd9dfb8ac6/image/0ea1b705898d65f50a5c3f4d272702ad.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML8148371549.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-about-stuffing/id1810507693?i=1000803940517&uo=4",
+    "category": "Foods",
+    "cueSeconds": 165,
+    "question": "In what year did a key historical milestone in stuffing take place?",
+    "options": [
+      "1783",
+      "1826",
+      "1807",
+      "1849"
+    ],
+    "correctIndex": 2,
+    "explanation": "Centuries later, in 1807, a French food writer took the idea to the extreme by publishing a recipe that packed 17 different birds inside one another, a concept that eventually inspired the modern turducken. Across the United States, stuffing recipes grew out of local staple crops, giving rise to classics like Southern cornbread dressing, New England oyster stuffing, Midwestern sausage and apple blends, and Hawaiian stuffing made with Portuguese sweet bread.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "Who created or patented the Stove Top stuffing in 1972?",
+      "options": [
+        "Michael Faraday",
+        "Ruth Siems",
+        "Thomas Edison",
+        "Antoine Lavoisier"
+      ],
+      "correctIndex": 1,
+      "explanation": "Making the dish from scratch used to take hours until home economist Ruth Siems invented Stove Top stuffing in 1972. She carefully engineered the crumb size and bread structure so the mix would hydrate quickly without turning to mush, and today about 60 million boxes sell during the Thanksgiving season alone."
+    }
+  },
+  {
     "guid": "d9471340-e7a1-11f1-83b4-7789c2b9fc75",
     "title": "Fun Facts About the Wampanoag People",
     "pubDate": "Tue, 24 Nov 2026 08:10:00 -0000",
