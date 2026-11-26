@@ -1,5 +1,37 @@
 [
   {
+    "guid": "bf8e1f52-e94f-11f1-b2be-03fc0e780d57",
+    "title": "Fun Facts to Share at the Thanksgiving Table",
+    "pubDate": "Thu, 26 Nov 2026 08:10:00 -0000",
+    "durationSec": 1062,
+    "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/bf8e1f52-e94f-11f1-b2be-03fc0e780d57/image/ccf95787f5cc68e7b990105810470432.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML1797471852.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693",
+    "category": "Foods",
+    "cueSeconds": 165,
+    "question": "In what year did a key historical milestone in fun facts to share at the thanksgiving table take place?",
+    "options": [
+      "1621",
+      "1597",
+      "1640",
+      "1663"
+    ],
+    "correctIndex": 0,
+    "explanation": "While many people believe the 1621 harvest feast shared by the Pilgrims and the Wampanoag people started an unbroken annual tradition, American Thanksgiving history actually followed a much more uneven path. Indigenous peoples held seasonal harvest and gratitude ceremonies for generations before 1621, and the Plymouth meal was largely forgotten for about 200 years.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "What specific quantity of pounds is noted in the episode on Fun Facts to Share at the Thanksgiving Table?",
+      "options": [
+        "Single pound",
+        "Seventeen pounds",
+        "Over 400 pounds",
+        "3,156 pounds"
+      ],
+      "correctIndex": 3,
+      "explanation": "In October 2026, Rhode Island gardener Ron Wallace broke the world record with a giant pumpkin weighing 3,156 pounds, beating a record set just one week earlier by nearly 300 pounds. Even the everyday dinner fork has a surprising backstory, since early European critics mocked forks as silly or insulting to God before four-tined forks became common in the early 1800s."
+    }
+  },
+  {
     "guid": "5ec67bea-e870-11f1-817c-a3fd9dfb8ac6",
     "title": "Fun Facts About Stuffing",
     "pubDate": "Wed, 25 Nov 2026 08:10:00 -0000",
