@@ -1,5 +1,37 @@
 [
   {
+    "guid": "ae0eab16-e9b8-11f1-96ef-471dd5d6f840",
+    "title": "Fun Facts About Jimothy",
+    "pubDate": "Fri, 27 Nov 2026 08:10:00 -0000",
+    "durationSec": 865,
+    "artworkUrl": "https://megaphone-images.spotifycdn.com/podcasts/ae0eab16-e9b8-11f1-96ef-471dd5d6f840/image/4b4491d08be83e6c34f3b9e30df50fad.png?ixlib=rails-4.3.1&max-w=600&max-h=600&fit=crop&auto=format,compress",
+    "audioUrl": "https://tracking.swap.fm/track/YfZO4tERxneauNcW9Fgn/mgln.ai/e/211/traffic.megaphone.fm/ARML6404358547.mp3",
+    "appleUrl": "https://podcasts.apple.com/us/podcast/fun-facts-daily/id1810507693",
+    "category": "Animals",
+    "cueSeconds": 165,
+    "question": "In what year did a key historical milestone in jimothy take place?",
+    "options": [
+      "2026",
+      "2002",
+      "2045",
+      "2068"
+    ],
+    "correctIndex": 0,
+    "explanation": "In July 2026, a wild raccoon named Jimothy became an overnight internet sensation after Ballard resident Kiana Hall filmed him wandering through Seattle. Immediately recognizable for his compact frame and very little visible neck, Jimothy likely has short spine syndrome, a rare congenital condition in which the vertebrae are compressed or fused together.",
+    "vaultBonus": {
+      "cueSeconds": 480,
+      "question": "What specific quantity of tries and still is noted in the episode on Jimothy?",
+      "options": [
+        "Single tries and still",
+        "Ten tries and still",
+        "Seventeen tries and still",
+        "Over 400 tries and still"
+      ],
+      "correctIndex": 1,
+      "explanation": "Davis demonstrated that raccoons could unlock complex puzzle boxes in fewer than ten tries and still remember how to open them more than a year later. Even their famous habit of dunking food in water, which inspired the scientific name Procyon lotor , is widely misunderstood."
+    }
+  },
+  {
     "guid": "bf8e1f52-e94f-11f1-b2be-03fc0e780d57",
     "title": "Fun Facts to Share at the Thanksgiving Table",
     "pubDate": "Thu, 26 Nov 2026 08:10:00 -0000",
